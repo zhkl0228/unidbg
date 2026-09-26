@@ -221,9 +221,14 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
     HYP_ASSERT_SUCCESS(hv_vcpu_set_trap_debug_exceptions(cpu->vcpu, false));
     assert(pthread_setspecific(hypervisor->cpu_key, cpu) == 0);
 
-    void *vcpu = lookupVcpu(cpu->vcpu);
-    assert(vcpu != nullptr);
-    cpu->cpu = vcpu;
+    if (@available(macOS 27.0.0, *)) {
+      // cpu->cpu stays null: HCR_EL2 and context_save/context_restore go through the
+      // framework API, so neither the private _vcpus symbol nor the Hv::Vcpu layout is needed.
+    } else {
+      void *vcpu = lookupVcpu(cpu->vcpu);
+      assert(vcpu != nullptr);
+      cpu->cpu = vcpu;
+    }
 
     if(hypervisor->is64Bit) {
       uint64_t value = 1LL << HCR_EL2$DC; // set stage 1 as normal memory
@@ -259,7 +264,8 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
     auto hypervisor = (t_hypervisor) handle;
     t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
     if (!cpu) return 0;
-    return (jlong) cpu->cpu;
+    // diagnostics only: resolved on demand, cpu->cpu is not populated on macOS 27+
+    return (jlong) lookupVcpu(cpu->vcpu);
 }
 
 /*
@@ -1103,6 +1109,40 @@ JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor
   return (jlong) cpsr;
 }
 
+// macOS 27+: only per-thread state is switched. vCPU-wide state (HCR_EL2 and the other
+// control fields, VBAR/SCTLR/MDSCR, hardware breakpoint/watchpoint registers, timers) stays
+// untouched, unlike the raw context memcpy which rolled DBGB*/DBGW* back to the snapshot and
+// silently dropped breakpoints installed after it was taken.
+static void save_cpu_regs(t_hypervisor_cpu cpu, t_cpu_regs regs) {
+  for (int i = 0; i < 31; i++) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, (hv_reg_t) (HV_REG_X0 + i), &regs->x[i]));
+  }
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_PC, &regs->pc));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_CPSR, &regs->cpsr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_FPCR, &regs->fpcr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_reg(cpu->vcpu, HV_REG_FPSR, &regs->fpsr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, &regs->elr_el1));
+  HYP_ASSERT_SUCCESS(hv_vcpu_get_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, &regs->spsr_el1));
+  for (int i = 0; i < 32; i++) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_get_simd_fp_reg(cpu->vcpu, (hv_simd_fp_reg_t) (HV_SIMD_FP_REG_Q0 + i), &regs->q[i]));
+  }
+}
+
+static void restore_cpu_regs(t_hypervisor_cpu cpu, t_cpu_regs regs) {
+  for (int i = 0; i < 31; i++) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, (hv_reg_t) (HV_REG_X0 + i), regs->x[i]));
+  }
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_PC, regs->pc));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_CPSR, regs->cpsr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_FPCR, regs->fpcr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_reg(cpu->vcpu, HV_REG_FPSR, regs->fpsr));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_ELR_EL1, regs->elr_el1));
+  HYP_ASSERT_SUCCESS(hv_vcpu_set_sys_reg(cpu->vcpu, HV_SYS_REG_SPSR_EL1, regs->spsr_el1));
+  for (int i = 0; i < 32; i++) {
+    HYP_ASSERT_SUCCESS(hv_vcpu_set_simd_fp_reg(cpu->vcpu, (hv_simd_fp_reg_t) (HV_SIMD_FP_REG_Q0 + i), regs->q[i]));
+  }
+}
+
 /*
  * Class:     com_github_unidbg_arm_backend_hypervisor_Hypervisor
  * Method:    context_restore
@@ -1114,8 +1154,12 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   auto ctx = (t_cpu_context) context;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   if (!cpu) return;
-  t_vcpu_context vcpu_context = get_vcpu_context(cpu);
-  memcpy(vcpu_context, ctx->ctx, vcpu_context_size());
+  if (@available(macOS 27.0.0, *)) {
+    restore_cpu_regs(cpu, &ctx->regs);
+  } else {
+    t_vcpu_context vcpu_context = get_vcpu_context(cpu);
+    memcpy(vcpu_context, ctx->ctx, vcpu_context_size());
+  }
   hypervisor->sp = ctx->sp;
   hypervisor->cpacr = ctx->cpacr;
   hypervisor->tpidr = ctx->tpidr;
@@ -1133,8 +1177,12 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
   auto ctx = (t_cpu_context) context;
   t_hypervisor_cpu cpu = get_hypervisor_cpu(env, hypervisor);
   if (!cpu) return;
-  t_vcpu_context vcpu_context = get_vcpu_context(cpu);
-  memcpy(ctx->ctx, vcpu_context, vcpu_context_size());
+  if (@available(macOS 27.0.0, *)) {
+    save_cpu_regs(cpu, &ctx->regs);
+  } else {
+    t_vcpu_context vcpu_context = get_vcpu_context(cpu);
+    memcpy(ctx->ctx, vcpu_context, vcpu_context_size());
+  }
   ctx->sp = hypervisor->sp;
   ctx->cpacr = hypervisor->cpacr;
   ctx->tpidr = hypervisor->tpidr;

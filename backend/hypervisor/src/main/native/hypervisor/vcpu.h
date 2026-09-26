@@ -253,10 +253,12 @@ typedef struct vcpu_context {
 //   0xA20-0xFFF  reserved / unknown internal state
 //   0x1000+      VNCR page (managed via hv_vcpu_get/set_sys_reg API)
 //
-// macOS 27: the control-field block (control_field_0 = HCR_EL2) moved from
-// 0x698 to 0x920 and the dirty flags to 0xA08; the VNCR page is still at
-// context+0x1000 (Hv::Vcpu::Vcpu -> VcpuStateManager::initialize(ctx+0x1000)),
-// so the 0x1000 memcpy range below still covers the whole non-VNCR state.
+// macOS 27: the layout moved again (control_field_0 = HCR_EL2 at 0x920, dirty flags
+// at 0xA08; for a non-EL2 VM, ELR_EL1 0x3D0, FAR 0x3D8, ESR 0x3E0, SPSR 0x428,
+// DBGBVR0 0x488, all below 0x1000). Nothing below depends on it on 27+: context_save/
+// context_restore use the register API (struct cpu_regs) and HCR_EL2 uses
+// _hv_vcpu_get/set_control_field; struct vcpu_context and vcpu_context_size() are
+// pre-27 only.
 //
 // For single-thread context switching on the same vCPU, we must save/restore
 // up to 0x1000 to preserve internal state modified during hv_vcpu_run.

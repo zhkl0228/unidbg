@@ -74,8 +74,28 @@ static uint32_t syn_get_ec(uint64_t syn) {
 #define PSR_A_BIT	0x00000100
 #define PSR_D_BIT	0x00000200
 
+// macOS 27+: per-thread architectural state, saved/restored through the public
+// hv_vcpu_get/set_reg, hv_vcpu_get/set_simd_fp_reg and hv_vcpu_get/set_sys_reg API.
+// SP_EL0/CPACR_EL1/TPIDR_EL0/TPIDRRO_EL0 are not here: hypervisor->sp/cpacr/tpidr/tpidrro
+// are their source of truth (cpu_loop writes them into the vCPU before every hv_vcpu_run).
+// ELR_EL1/SPSR_EL1 hold the interrupted EL0 pc/pstate while stopped in the VBAR_EL1 stub
+// (reg_read_pc64 and reg_read_nzcv read them), so they belong to the thread as well.
+typedef struct cpu_regs {
+  uint64_t x[31];
+  uint64_t pc;
+  uint64_t cpsr;
+  uint64_t fpcr;
+  uint64_t fpsr;
+  uint64_t elr_el1;
+  uint64_t spsr_el1;
+  hv_simd_fp_uchar16_t q[32];
+} *t_cpu_regs;
+
 typedef struct cpu_context {
-  char ctx[0x1000]; // raw vcpu context buffer: macOS 15+ needs 0x1000 (up to VNCR page); legacy is 0x7C0
+  union {
+    char ctx[0x1000]; // pre-macOS 27: raw vcpu context buffer: macOS 15+ needs 0x1000 (up to VNCR page); legacy is 0x7C0
+    struct cpu_regs regs; // macOS 27+
+  };
   uint64_t sp;
   uint64_t cpacr;
   uint64_t tpidr;
