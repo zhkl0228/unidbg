@@ -313,7 +313,10 @@ typedef struct vcpus_v1351 {
 } *t_vcpus_v1351;
 
 // macOS 15.0+: _vcpus[] is an array of pointers to Hv::Vcpu C++ objects.
-// This struct overlays the Hv::Vcpu object starting from its base address.
+// lookupVcpu returns &Vcpu->context (Vcpu+0x10) and cpu->cpu carries that pointer, so
+// when this struct is cast over cpu->cpu the offsets below are relative to Vcpu+0x10,
+// NOT the object base: trap_override at struct offset 0x100 lands on Vcpu+0x110
+// (matches Hv::Vcpu::run, which ORs *(Vcpu+0x110) into control_field_0).
 typedef struct vcpus_v1500 {
   void *vtable;                                   // 0x00  Hv::Vcpu vtable
   void *delegate;                                 // 0x08  VcpuStateManager::Delegate
@@ -333,6 +336,11 @@ typedef struct vcpus_v1500 {
 } *t_vcpus_v1500;
 
 // macOS 15.2+: same as vcpus_v1500 but with 2 additional fields before trap_override.
+// Same anchoring as vcpus_v1500: cpu->cpu is &context (Vcpu+0x10), so the trap_override
+// at struct offset 0x110 lands on Vcpu+0x120 — exactly the field Hv::Vcpu::run reads
+// (verified on macOS 15.7 both by IDA and functionally: writing Vcpu+0x120 arms
+// HCR_EL2.DC, while Vcpu+0x110 is the validated vcpu_handle slot and corrupting it
+// makes hv_vcpu_run fail synchronously with HV_BAD_ARGUMENT).
 typedef struct vcpus_v1520 {
   void *vtable;                                   // 0x00  Hv::Vcpu vtable
   void *delegate;                                 // 0x08  VcpuStateManager::Delegate
@@ -375,28 +383,36 @@ typedef struct hypervisor_cpu {
 
 #define HCR_EL2$DC 12
 
-// macOS 27+: ORs value into HCR_EL2 in the vCPU context through the exported
-//   _hv_vcpu_get/set_control_field. The value lives in the context, so it survives
-//   every hv_vcpu_run and is carried by context_save/context_restore.
-//   Hv::Vcpu grew here: feature_regs is 0x110 bytes (0x18-0x127), vcpu_config at 0x128,
-//   vcpu_handle at 0x130 and the override field at 0x140, so the vcpus_v1520 layout
-//   below would land inside feature_regs (Vcpu+0x120) and HCR_EL2.DC never takes effect:
-//   stage-1-off data accesses stay Device memory and LDXR/STXR fault with DFSC 0x35.
-// macOS 15+: writes to trap_override field in Hv::Vcpu object;
-//   Hv::Vcpu::run ORs it into control_field_0 (context+0x698) before hv_trap,
-//   then clears trap_override after exit.
+// Sets HCR_EL2 bits through the exported _hv_vcpu_get/set_control_field whenever the
+// weak-imported symbols resolve (verified exported on macOS 15.7: functional test read
+// HCR=0x200300001c0000 via index 0, wrote it back with HCR_EL2.DC, guest LDXR/STXR then
+// succeeded). The framework resolves the HCR_EL2 context offset itself, so no Hv::Vcpu
+// layout knowledge is needed and the value persists across hv_vcpu_run and travels with
+// context_save/restore.
+// Fallbacks (no exported symbols):
+// macOS 27+: aborts — 27 moved the trap_override field again (Vcpu+0x140), so there is
+//   no known-correct offset to write and the stage-1-off LDXR/STXR path silently breaks
+//   (DFSC 0x35) if the write misses.
+// macOS 15+: writes the trap_override field; Hv::Vcpu::run ORs it into control_field_0
+//   (context+0x698) before hv_trap, then clears it after exit. t_vcpus_v1500/v1520
+//   offsets are relative to &context (Vcpu+0x10): the 15.2+ trap_override at struct
+//   offset 0x110 lands on Vcpu+0x120.
 // Pre-15: writes directly to the canonical HCR_EL2 field in the flat _vcpus array.
 inline void set_HV_SYS_REG_HCR_EL2(t_hypervisor_cpu _cpu, const uint64_t value) {
-  if (@available(macOS 27.0.0, *)) {
-    if (!_hv_vcpu_get_control_field || !_hv_vcpu_set_control_field) {
+  if (@available(macOS 15.0.0, *)) {
+    if (_hv_vcpu_get_control_field && _hv_vcpu_set_control_field) {
+      uint64_t hcr = 0;
+      HYP_ASSERT_SUCCESS(_hv_vcpu_get_control_field(_cpu->vcpu, HV_CONTROL_FIELD_HCR_EL2, &hcr));
+      HYP_ASSERT_SUCCESS(_hv_vcpu_set_control_field(_cpu->vcpu, HV_CONTROL_FIELD_HCR_EL2, hcr | value));
+      return;
+    }
+    if (@available(macOS 27.0.0, *)) {
       fprintf(stderr, "Hypervisor.framework does not export _hv_vcpu_get/set_control_field: get=%p, set=%p\n",
               (void *) _hv_vcpu_get_control_field, (void *) _hv_vcpu_set_control_field);
       abort();
     }
-    uint64_t hcr = 0;
-    HYP_ASSERT_SUCCESS(_hv_vcpu_get_control_field(_cpu->vcpu, HV_CONTROL_FIELD_HCR_EL2, &hcr));
-    HYP_ASSERT_SUCCESS(_hv_vcpu_set_control_field(_cpu->vcpu, HV_CONTROL_FIELD_HCR_EL2, hcr | value));
-  } else if (@available(macOS 15.2.0, *)) {
+  }
+  if (@available(macOS 15.2.0, *)) {
     const auto cpu = static_cast<t_vcpus_v1520>(_cpu->cpu);
     cpu->hcr_el2_trap_override = value;
   } else if (@available(macOS 15.0.0, *)) {

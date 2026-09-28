@@ -50,8 +50,9 @@ static inline void *get_memory(khash_t(memory) *memory, uint64_t vaddr, size_t n
 }
 
 static t_vcpu_context get_vcpu_context(t_hypervisor_cpu cpu) {
-  auto vcpus = (t_vcpus) cpu->cpu;
-  return vcpus->context;
+  // _hv_vcpu_get_context is exported on every release this dylib loads on; using it
+  // keeps context_save/restore off the private _vcpus symbol and the Hv::Vcpu layout.
+  return _hv_vcpu_get_context(cpu->vcpu);
 }
 
 static bool handle_exception(JNIEnv *env, t_hypervisor hypervisor, t_hypervisor_cpu cpu) {
@@ -221,9 +222,17 @@ static t_hypervisor_cpu get_hypervisor_cpu(JNIEnv *env, t_hypervisor hypervisor)
     HYP_ASSERT_SUCCESS(hv_vcpu_set_trap_debug_exceptions(cpu->vcpu, false));
     assert(pthread_setspecific(hypervisor->cpu_key, cpu) == 0);
 
+    bool has_control_field_api = false;
+    if (@available(macOS 15.0.0, *)) {
+      has_control_field_api = _hv_vcpu_get_control_field && _hv_vcpu_set_control_field;
+    }
     if (@available(macOS 27.0.0, *)) {
       // cpu->cpu stays null: HCR_EL2 and context_save/context_restore go through the
       // framework API, so neither the private _vcpus symbol nor the Hv::Vcpu layout is needed.
+    } else if (has_control_field_api) {
+      // macOS 15+ with the exported control-field API: same as 27 — HCR_EL2 goes through
+      // _hv_vcpu_set_control_field and context_save/restore through _hv_vcpu_get_context,
+      // so neither the private _vcpus symbol nor the Hv::Vcpu layout is needed either.
     } else {
       void *vcpu = lookupVcpu(cpu->vcpu);
       assert(vcpu != nullptr);
@@ -1158,7 +1167,23 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_hypervisor_Hypervisor_
     restore_cpu_regs(cpu, &ctx->regs);
   } else {
     t_vcpu_context vcpu_context = get_vcpu_context(cpu);
-    memcpy(vcpu_context, ctx->ctx, vcpu_context_size());
+    if (@available(macOS 15.0.0, *)) {
+      // Carry the debug register block (DBGB*/DBGW*, context+0x478..+0x678) and the
+      // dirty-flag qword (context+0x780) across the memcpy: hardware breakpoints and
+      // watchpoints are emulator-global, so a restore must not roll back breakpoints
+      // installed after the snapshot was taken (same bug fixed on macOS 27 via the
+      // register API; without carrying the dirty bits the framework would not re-sync
+      // the preserved values to the hardware). The memcpy is kept (measured 0.10us per
+      // save+restore pair) instead of the register API (0.75us) used on macOS 27+.
+      uint8_t debug_regs[0x200];
+      memcpy(debug_regs, (const uint8_t *)vcpu_context + 0x478, sizeof(debug_regs));
+      const uint64_t dirty = *(const uint64_t *)((const uint8_t *)vcpu_context + 0x780);
+      memcpy(vcpu_context, ctx->ctx, vcpu_context_size());
+      memcpy((uint8_t *)vcpu_context + 0x478, debug_regs, sizeof(debug_regs));
+      *(uint64_t *)((uint8_t *)vcpu_context + 0x780) |= dirty;
+    } else {
+      memcpy(vcpu_context, ctx->ctx, vcpu_context_size());
+    }
   }
   hypervisor->sp = ctx->sp;
   hypervisor->cpacr = ctx->cpacr;
