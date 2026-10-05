@@ -229,10 +229,21 @@ public class ArmLD64 extends Dlfcn {
                             RegisterContext context = emulator.getContext();
                             Pointer filename = context.getPointerArg(0);
                             int flags = context.getIntArg(1);
-                            if (log.isDebugEnabled()) {
-                                log.debug("dlopen filename={}, flags={}, LR={}", filename.getString(0), flags, context.getLRPointer());
+
+                            String name;
+                            if (filename == null) {
+                                Module module = emulator.getMemory().findModuleByAddress(context.getLR());
+                                if (module == null) {
+                                    throw new UnsupportedOperationException();
+                                }
+                                name = module.name;
+                            } else {
+                                name = filename.getString(0);
                             }
-                            return dlopen(emulator.getMemory(), filename.getString(0), emulator);
+                            if (log.isDebugEnabled()) {
+                                log.debug("dlopen filename={}, flags={}, LR={}", name, flags, context.getLRPointer());
+                            }
+                            return dlopen(emulator.getMemory(), name, emulator);
                         }
                     }).peer;
                 case "dladdr":
