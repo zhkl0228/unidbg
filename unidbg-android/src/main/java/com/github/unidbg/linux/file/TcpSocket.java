@@ -293,4 +293,18 @@ public class TcpSocket extends SocketIO implements FileIO {
     public String toString() {
         return socket.toString();
     }
+
+    @Override
+    public boolean canRead() {
+        try {
+            return inputStream != null && inputStream.available() > 0;
+        } catch (IOException ignored) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean canWrite() {
+        return true;
+    }
 }

@@ -2,6 +2,7 @@ package com.github.unidbg.file;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.arm.backend.Backend;
+import com.github.unidbg.thread.Waiter;
 import com.sun.jna.Pointer;
 
 import java.io.IOException;
@@ -11,6 +12,9 @@ public interface FileIO {
     int SEEK_SET = 0;
     int SEEK_CUR = 1;
     int SEEK_END = 2;
+
+    boolean canRead();
+    boolean canWrite();
 
     void close();
 
@@ -53,8 +57,9 @@ public interface FileIO {
     int llseek(long offset, Pointer result, int whence);
 
     int recvfrom(Backend backend, Pointer buf, int len, int flags, Pointer src_addr, Pointer addrlen);
-
+    
     String getPath();
 
     boolean isStdIO();
+
 }
