@@ -2698,7 +2698,7 @@ public class DalvikVM64 extends BaseVM implements VM {
                 DvmObject<?> obj = size == 0 ? null : initialElement == null ? null : getObject(initialElement.toIntPeer());
                 DvmObject<?>[] array = new DvmObject[size];
                 Arrays.fill(array, obj);
-                ArrayObject arrayObject = new ArrayObject(array);
+                ArrayObject arrayObject = ArrayObject.newObjectArray(dvmClass, array);
                 if (verbose || verboseMethodOperation) {
                     System.out.printf("JNIEnv->NewObjectArray(%s => %s) was called from %s%n", arrayObject, size, context.getLRPointer());
                 }
