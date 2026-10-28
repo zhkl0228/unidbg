@@ -14,7 +14,17 @@ class ElfParser implements ElfDataIn {
 	}
 
 	void seek(long offset) {
-		fsFile.position((int) offset);
+		int position = (int) offset;
+		if (position < 0) {
+			position = 0; // 加壳 SO 的段偏移可能越界，夹到文件范围内
+		} else if (position > fsFile.capacity()) {
+			position = fsFile.capacity();
+		}
+		fsFile.position(position);
+	}
+
+	int getCapacity() {
+		return fsFile.capacity();
 	}
 
 	/**
@@ -34,6 +44,9 @@ class ElfParser implements ElfDataIn {
 
 	@Override
 	public short readUnsignedByte() {
+		if (!fsFile.hasRemaining()) {
+			return 0;
+		}
 		int val = fsFile.get() & 0xff;
 		return (short) val;
 	}
@@ -106,7 +119,7 @@ class ElfParser implements ElfDataIn {
 	ByteBuffer readBuffer(int length) {
 		int limit = fsFile.limit();
 		try {
-			fsFile.limit(fsFile.position() + length);
+			fsFile.limit(Math.min(fsFile.position() + length, fsFile.capacity()));
 			return fsFile.slice();
 		} finally {
 			fsFile.limit(limit);
