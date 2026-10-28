@@ -3140,7 +3140,21 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _GetFloatArrayRegion = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                FloatArray array = getObject(object.toIntPeer());
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetFloatArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
+                float[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
+                if (log.isDebugEnabled()) {
+                    log.debug("GetFloatArrayRegion array={}, start={}, length={}, buf={}", array, start, length, buf);
+                }
+                buf.write(0, data, 0, data.length);
+                return 0;
             }
         });
 
