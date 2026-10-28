@@ -11,6 +11,7 @@ import com.github.unidbg.linux.android.dvm.api.Signature;
 import com.github.unidbg.linux.android.dvm.api.SystemService;
 import com.github.unidbg.linux.android.dvm.array.ArrayObject;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.linux.android.dvm.jni.ProxyDvmObject;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmBoolean;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmInteger;
 import com.github.unidbg.linux.android.dvm.wrapper.DvmLong;
@@ -36,6 +37,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -188,6 +190,15 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public boolean callStaticBooleanMethodV(BaseVM vm, DvmClass dvmClass, String signature, VaList vaList) {
+        switch (signature) {
+            case "android/os/Debug->isDebuggerConnected()Z":
+                return false;
+            case "android/text/TextUtils->isEmpty(Ljava/lang/CharSequence;)Z": {
+                DvmObject<?> text = vaList.getObjectArg(0);
+                return text == null || text.getValue() == null || text.getValue().toString().isEmpty();
+            }
+        }
+
         throw new UnsupportedOperationException(signature);
     }
 
@@ -233,6 +244,11 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public long callLongMethodV(BaseVM vm, DvmObject<?> dvmObject, String signature, VaList vaList) {
+        switch (signature) {
+            case "java/util/Date->getTime()J":
+                return ((Date) dvmObject.getValue()).getTime();
+        }
+
         throw new UnsupportedOperationException(signature);
     }
 
@@ -412,6 +428,124 @@ public abstract class AbstractJni implements Jni {
                 StringObject stringObject = (StringObject) dvmObject;
                 return new StringObject(vm, stringObject.value.trim());
             }
+            case "java/lang/String->substring(I)Ljava/lang/String;": {
+                String input = (String) dvmObject.getValue();
+                return new StringObject(vm, input.substring(vaList.getIntArg(0)));
+            }
+            case "java/lang/String->substring(II)Ljava/lang/String;": {
+                String input = (String) dvmObject.getValue();
+                return new StringObject(vm, input.substring(vaList.getIntArg(0), vaList.getIntArg(1)));
+            }
+            case "java/lang/String->replaceAll(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;": {
+                String input = (String) dvmObject.getValue();
+                StringObject regex = vaList.getObjectArg(0);
+                StringObject replacement = vaList.getObjectArg(1);
+                assert regex != null && replacement != null;
+                return new StringObject(vm, input.replaceAll(regex.value, replacement.value));
+            }
+            case "java/util/Iterator->next()Ljava/lang/Object;": {
+                Iterator<?> iterator = (Iterator<?>) dvmObject.getValue();
+                Object next = iterator.next();
+                if (next instanceof Map.Entry) {
+                    return vm.resolveClass("java/util/Map$Entry").newObject(next);
+                }
+                return ProxyDvmObject.createObject(vm, next);
+            }
+            case "java/util/Map$Entry->getKey()Ljava/lang/Object;": {
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>) dvmObject.getValue();
+                return ProxyDvmObject.createObject(vm, entry.getKey());
+            }
+            case "java/util/Map$Entry->getValue()Ljava/lang/Object;": {
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>) dvmObject.getValue();
+                return ProxyDvmObject.createObject(vm, entry.getValue());
+            }
+            case "java/util/Map->get(Ljava/lang/Object;)Ljava/lang/Object;": {
+                Map<?, ?> mapping = (Map<?, ?>) dvmObject.getValue();
+                DvmObject<?> key = vaList.getObjectArg(0);
+                return ProxyDvmObject.createObject(vm, mapping.get(key == null ? null : key.getValue()));
+            }
+            case "java/util/Map->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;": {
+                @SuppressWarnings("unchecked")
+                Map<Object, Object> mapping = (Map<Object, Object>) dvmObject.getValue();
+                DvmObject<?> key = vaList.getObjectArg(0);
+                DvmObject<?> value = vaList.getObjectArg(1);
+                return ProxyDvmObject.createObject(vm, mapping.put(key == null ? null : key.getValue(),
+                        value == null ? null : value.getValue()));
+            }
+            case "java/util/Map->keySet()Ljava/util/Set;": {
+                Map<?, ?> mapping = (Map<?, ?>) dvmObject.getValue();
+                return vm.resolveClass("java/util/Set").newObject(mapping.keySet());
+            }
+            case "java/util/Set->toArray()[Ljava/lang/Object;": {
+                Set<?> elements = (Set<?>) dvmObject.getValue();
+                return ProxyDvmObject.createObject(vm, elements.toArray());
+            }
+            case "java/lang/Class->getSimpleName()Ljava/lang/String;": {
+                String className = ((DvmClass) dvmObject).getClassName();
+                int index = className.lastIndexOf('/');
+                return new StringObject(vm, index == -1 ? className : className.substring(index + 1));
+            }
+            case "java/lang/Integer->toString()Ljava/lang/String;":
+                return new StringObject(vm, String.valueOf(dvmObject.getValue()));
+            case "java/lang/StringBuilder->toString()Ljava/lang/String;":
+            case "java/lang/StringBuffer->toString()Ljava/lang/String;":
+                return new StringObject(vm, dvmObject.getValue().toString());
+            case "java/lang/StringBuilder->append(Ljava/lang/String;)Ljava/lang/StringBuilder;": {
+                StringBuilder builder = (StringBuilder) dvmObject.getValue();
+                StringObject text = vaList.getObjectArg(0);
+                builder.append(text == null ? null : text.value);
+                return dvmObject;
+            }
+            case "java/lang/StringBuilder->append(I)Ljava/lang/StringBuilder;": {
+                StringBuilder builder = (StringBuilder) dvmObject.getValue();
+                builder.append(vaList.getIntArg(0));
+                return dvmObject;
+            }
+            case "java/lang/StringBuilder->append(J)Ljava/lang/StringBuilder;": {
+                StringBuilder builder = (StringBuilder) dvmObject.getValue();
+                builder.append(vaList.getLongArg(0));
+                return dvmObject;
+            }
+            case "java/lang/StringBuilder->append(C)Ljava/lang/StringBuilder;": {
+                StringBuilder builder = (StringBuilder) dvmObject.getValue();
+                builder.append((char) vaList.getIntArg(0));
+                return dvmObject;
+            }
+            case "java/lang/StringBuilder->append(Ljava/lang/CharSequence;II)Ljava/lang/StringBuilder;": {
+                StringBuilder builder = (StringBuilder) dvmObject.getValue();
+                DvmObject<?> sequence = vaList.getObjectArg(0);
+                builder.append((CharSequence) (sequence == null ? null : sequence.getValue()),
+                        vaList.getIntArg(1), vaList.getIntArg(2));
+                return dvmObject;
+            }
+            case "java/lang/StringBuffer->append(Ljava/lang/String;)Ljava/lang/StringBuffer;": {
+                StringBuffer buffer = (StringBuffer) dvmObject.getValue();
+                StringObject text = vaList.getObjectArg(0);
+                buffer.append(text == null ? null : text.value);
+                return dvmObject;
+            }
+            case "java/lang/StringBuffer->append(I)Ljava/lang/StringBuffer;": {
+                StringBuffer buffer = (StringBuffer) dvmObject.getValue();
+                buffer.append(vaList.getIntArg(0));
+                return dvmObject;
+            }
+            case "java/lang/StringBuffer->append(J)Ljava/lang/StringBuffer;": {
+                StringBuffer buffer = (StringBuffer) dvmObject.getValue();
+                buffer.append(vaList.getLongArg(0));
+                return dvmObject;
+            }
+            case "java/lang/StringBuffer->append(C)Ljava/lang/StringBuffer;": {
+                StringBuffer buffer = (StringBuffer) dvmObject.getValue();
+                buffer.append((char) vaList.getIntArg(0));
+                return dvmObject;
+            }
+            case "java/lang/StringBuffer->append(Ljava/lang/CharSequence;II)Ljava/lang/StringBuffer;": {
+                StringBuffer buffer = (StringBuffer) dvmObject.getValue();
+                DvmObject<?> sequence = vaList.getObjectArg(0);
+                buffer.append((CharSequence) (sequence == null ? null : sequence.getValue()),
+                        vaList.getIntArg(1), vaList.getIntArg(2));
+                return dvmObject;
+            }
         }
 
         throw new UnsupportedOperationException(signature);
@@ -499,6 +633,14 @@ public abstract class AbstractJni implements Jni {
                 }
                 break;
             }
+            case "java/lang/String->valueOf(I)Ljava/lang/String;":
+                return new StringObject(vm, String.valueOf(vaList.getIntArg(0)));
+            case "java/lang/String->valueOf(J)Ljava/lang/String;":
+                return new StringObject(vm, String.valueOf(vaList.getLongArg(0)));
+            case "java/lang/String->valueOf(Z)Ljava/lang/String;":
+                return new StringObject(vm, String.valueOf(vaList.getIntArg(0) != 0));
+            case "java/lang/Integer->toString(I)Ljava/lang/String;":
+                return new StringObject(vm, String.valueOf(vaList.getIntArg(0)));
         }
 
         throw new UnsupportedOperationException(signature);
@@ -558,6 +700,12 @@ public abstract class AbstractJni implements Jni {
             case "java/util/Map->size()I":
                 Map<?, ?> map = (Map<?, ?>) dvmObject.getValue();
                 return map.size();
+            case "java/lang/String->hashCode()I":
+                return ((String) dvmObject.getValue()).hashCode();
+            case "java/lang/String->compareToIgnoreCase(Ljava/lang/String;)I": {
+                StringObject other = vaList.getObjectArg(0);
+                return ((String) dvmObject.getValue()).compareToIgnoreCase(other == null ? null : other.value);
+            }
         }
 
         throw new UnsupportedOperationException(signature);
@@ -620,6 +768,12 @@ public abstract class AbstractJni implements Jni {
                 StringObject prefix = vaList.getObjectArg(0);
                 return str.startsWith(prefix.value);
             }
+            case "java/lang/String->equalsIgnoreCase(Ljava/lang/String;)Z": {
+                StringObject other = vaList.getObjectArg(0);
+                return ((String) dvmObject.getValue()).equalsIgnoreCase(other == null ? null : other.value);
+            }
+            case "java/util/Map->isEmpty()Z":
+                return ((Map<?, ?>) dvmObject.getValue()).isEmpty();
         }
 
         throw new UnsupportedOperationException(signature);
@@ -798,6 +952,12 @@ public abstract class AbstractJni implements Jni {
                 b = vaList.getIntArg(0) != 0;
                 return DvmBoolean.valueOf(vm, b);
             }
+            case "java/util/Date-><init>()V":
+                return dvmClass.newObject(new Date());
+            case "java/lang/StringBuilder-><init>()V":
+                return dvmClass.newObject(new StringBuilder());
+            case "java/lang/StringBuffer-><init>()V":
+                return dvmClass.newObject(new StringBuffer());
         }
 
         throw new UnsupportedOperationException(signature);
@@ -805,8 +965,15 @@ public abstract class AbstractJni implements Jni {
 
     @Override
     public DvmObject<?> allocObject(BaseVM vm, DvmClass dvmClass, String signature) {
-        if ("java/util/HashMap->allocObject".equals(signature)) {
-            return dvmClass.newObject(new HashMap<>());
+        switch (signature) {
+            case "java/util/HashMap->allocObject":
+                return dvmClass.newObject(new HashMap<>());
+            case "java/util/Date->allocObject":
+                return dvmClass.newObject(new Date());
+            case "java/lang/StringBuilder->allocObject":
+                return dvmClass.newObject(new StringBuilder());
+            case "java/lang/StringBuffer->allocObject":
+                return dvmClass.newObject(new StringBuffer());
         }
 
         throw new UnsupportedOperationException(signature);
