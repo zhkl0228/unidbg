@@ -11,6 +11,7 @@ import com.github.unidbg.arm.context.RegisterContext;
 import com.github.unidbg.linux.android.dvm.apk.Apk;
 import com.github.unidbg.linux.android.dvm.array.ArrayObject;
 import com.github.unidbg.linux.android.dvm.array.ByteArray;
+import com.github.unidbg.linux.android.dvm.array.CharArray;
 import com.github.unidbg.linux.android.dvm.array.DoubleArray;
 import com.github.unidbg.linux.android.dvm.array.FloatArray;
 import com.github.unidbg.linux.android.dvm.array.IntArray;
@@ -2786,7 +2787,15 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _NewCharArray = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                int size = context.getIntArg(1);
+                if (log.isDebugEnabled()) {
+                    log.debug("NewCharArray size={}, LR={}, PC={}", size, context.getLRPointer(), context.getPCPointer());
+                }
+                if (verbose) {
+                    System.out.printf("JNIEnv->NewCharArray(%d) was called from %s%n", size, context.getLRPointer());
+                }
+                return addLocalObject(new CharArray(DalvikVM.this, new char[size]));
             }
         });
 
@@ -2851,7 +2860,14 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _GetCharArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                Pointer isCopy = context.getPointerArg(2);
+                CharArray array = getObject(object.toIntPeer());
+                if (log.isDebugEnabled()) {
+                    log.debug("GetCharArrayElements array={}, isCopy={}", array, isCopy);
+                }
+                return Objects.requireNonNull(array)._GetArrayCritical(emulator, isCopy).toIntPeer();
             }
         });
 
@@ -3010,7 +3026,16 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _ReleaseCharArrayElements = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                Pointer pointer = context.getPointerArg(2);
+                int mode = context.getIntArg(3);
+                CharArray array = getObject(object.toIntPeer());
+                if (log.isDebugEnabled()) {
+                    log.debug("ReleaseCharArrayElements array={}, pointer={}, mode={}", array, pointer, mode);
+                }
+                Objects.requireNonNull(array)._ReleaseArrayCritical(pointer, mode);
+                return 0;
             }
         });
 
@@ -3098,7 +3123,20 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _GetCharArrayRegion = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                CharArray array = getObject(object.toIntPeer());
+                if (verbose) {
+                    System.out.printf("JNIEnv->GetCharArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
+                char[] data = Arrays.copyOfRange(Objects.requireNonNull(array).value, start, start + length);
+                for (int i = 0; i < data.length; i++) {
+                    buf.setShort((long) i * 2, (short) data[i]);
+                }
+                return 0;
             }
         });
 
@@ -3200,7 +3238,21 @@ public class DalvikVM extends BaseVM implements VM {
         Pointer _SetCharArrayRegion = svcMemory.registerSvc(new ArmSvc() {
             @Override
             public long handle(Emulator<?> emulator) {
-                throw new UnsupportedOperationException();
+                RegisterContext context = emulator.getContext();
+                UnidbgPointer object = context.getPointerArg(1);
+                int start = context.getIntArg(2);
+                int length = context.getIntArg(3);
+                Pointer buf = context.getPointerArg(4);
+                CharArray array = getObject(object.toIntPeer());
+                if (verbose) {
+                    System.out.printf("JNIEnv->SetCharArrayRegion(%s, %d, %d, %s) was called from %s%n", array, start, length, buf, context.getLRPointer());
+                }
+                char[] data = new char[length];
+                for (int i = 0; i < length; i++) {
+                    data[i] = (char) buf.getShort((long) i * 2);
+                }
+                Objects.requireNonNull(array).setData(start, data);
+                return 0;
             }
         });
 
