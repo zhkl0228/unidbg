@@ -1169,11 +1169,18 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
         return pointer.toUIntPeer();
     }
 
+    private static final int PR_GET_DUMPABLE = 3;
+    private static final int PR_SET_DUMPABLE = 4;
     private static final int PR_SET_NAME = 15;
     private static final int PR_SET_NO_NEW_PRIVS = 38;
+    private static final int PR_GET_NO_NEW_PRIVS = 39;
     private static final int PR_SET_THP_DISABLE = 41;
     private static final int BIONIC_PR_SET_VMA = 0x53564d41;
     private static final int PR_SET_PTRACER = 0x59616d61;
+
+    // zygote 子进程 setresuid 到应用 uid 后，dumpable 会被 /proc/sys/fs/suid_dumpable（Android 默认 0）覆盖
+    private int dumpable = 0;
+    private int noNewPrivs = 0;
 
     private int prctl(Emulator<?> emulator) {
         RegisterContext context = emulator.getContext();
@@ -1204,6 +1211,15 @@ public class ARM64SyscallHandler extends AndroidSyscallHandler {
                 }
                 return 0;
             case PR_SET_NO_NEW_PRIVS:
+                noNewPrivs = (int) arg2;
+                return 0;
+            case PR_GET_NO_NEW_PRIVS:
+                return noNewPrivs;
+            case PR_SET_DUMPABLE:
+                dumpable = (int) arg2;
+                return 0;
+            case PR_GET_DUMPABLE:
+                return dumpable;
             case PR_SET_THP_DISABLE:
                 return 0;
             default:
