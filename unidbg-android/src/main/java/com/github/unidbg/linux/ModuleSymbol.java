@@ -91,7 +91,7 @@ public class ModuleSymbol {
         return null;
     }
 
-    void relocation(Emulator<?> emulator, LinuxModule module, ElfSymbol symbol) {
+    long relocation(Emulator<?> emulator, LinuxModule module, ElfSymbol symbol) {
         final long value;
         if (load_base == WEAK_BASE) {
             value = offset;
@@ -99,6 +99,7 @@ public class ModuleSymbol {
             value = module.base + (symbol == null ? 0 : symbol.value) + offset;
         }
         relocationAddr.setPointer(0, UnidbgPointer.pointer(emulator, value));
+        return value;
     }
 
     void relocation(Emulator<?> emulator, LinuxModule owner) throws IOException {
@@ -112,6 +113,10 @@ public class ModuleSymbol {
             value = load_base + (symbol == null ? 0 : symbol.value) + offset;
         }
         relocationAddr.setPointer(0, UnidbgPointer.pointer(emulator, value));
+        if (symbol != null) {
+            owner.registerImportedSymbol(UnidbgPointer.nativeValue(relocationAddr),
+                    toSoName == null ? soName : toSoName, symbol.getName(), value);
+        }
     }
 
     public ElfSymbol getSymbol() {

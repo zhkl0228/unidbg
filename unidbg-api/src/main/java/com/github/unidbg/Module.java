@@ -17,6 +17,20 @@ import java.util.Map;
 
 public abstract class Module {
 
+    public static final class ImportedSymbol {
+        public final long relocationAddress;
+        public final String moduleName;
+        public final String symbolName;
+        public final long targetAddress;
+
+        public ImportedSymbol(long relocationAddress, String moduleName, String symbolName, long targetAddress) {
+            this.relocationAddress = relocationAddress;
+            this.moduleName = moduleName;
+            this.symbolName = symbolName;
+            this.targetAddress = targetAddress;
+        }
+    }
+
     public final String name;
     public final long base;
     public final long size;
@@ -73,6 +87,20 @@ public abstract class Module {
      */
     public Collection<Symbol> getExportedSymbols() {
         return Collections.emptyList();
+    }
+
+    /**
+     * 已重定位的导入符号，按 GOT/PLT 槽位登记。
+     */
+    public Collection<ImportedSymbol> getImportedSymbols() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * 按重定位地址（GOT/PLT 槽位）查找导入的符号，未记录时返回 null。
+     */
+    public ImportedSymbol findImportedSymbolByRelocationAddress(long relocationAddress) {
+        return null;
     }
 
     protected final Symbol findDependencySymbolByName(String name) {
