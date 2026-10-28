@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public abstract class UnixSyscallHandler<T extends NewFileIO> implements SyscallHandler<T> {
 
@@ -395,15 +393,32 @@ public abstract class UnixSyscallHandler<T extends NewFileIO> implements Syscall
         return file.fcntl(emulator, cmd, arg);
     }
 
-    private static final Pattern FD_PATTERN = Pattern.compile("/proc/self/fd/(\\d+)");
+    static int parseProcFd(String path, int pid) {
+        String prefix;
+        if (path.startsWith("/proc/self/fd/")) {
+            prefix = "/proc/self/fd/";
+        } else if (path.startsWith("/proc/" + pid + "/fd/")) {
+            prefix = "/proc/" + pid + "/fd/";
+        } else {
+            return -1;
+        }
+        String fd = path.substring(prefix.length());
+        if (fd.isEmpty() || fd.indexOf('/') >= 0) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(fd);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
 
     protected int readlink(Emulator<?> emulator, String path, Pointer buf, int bufSize) {
         if (log.isDebugEnabled()) {
             log.debug("readlink path={}, buf={}, bufSize={}", path, buf, bufSize);
         }
-        Matcher matcher = FD_PATTERN.matcher(path);
-        if (matcher.find()) {
-            int fd = Integer.parseInt(matcher.group(1));
+        int fd = parseProcFd(path, emulator.getPid());
+        if (fd >= 0) {
             FileIO io = fdMap.get(fd);
             if (io != null) {
                 path = io.getPath();
