@@ -400,8 +400,8 @@ public class ElfDynamicStructure {
 	}
 
 	public String getSOName(String fileName) throws IOException {
-		ElfStringTable stringTable = dtStringTable.getValue();
-		return soName == -1 ? fileName : stringTable.get(soName);
+		ElfStringTable stringTable = dtStringTable == null ? null : dtStringTable.getValue();
+		return soName == -1 || stringTable == null ? fileName : stringTable.get(soName);
 	}
 
 	public int getInit() {
@@ -410,7 +410,10 @@ public class ElfDynamicStructure {
 
 	public List<String> getNeededLibraries() throws ElfException, IOException {
 		List<String> result = new ArrayList<>();
-		ElfStringTable stringTable = dtStringTable.getValue();
+		ElfStringTable stringTable = dtStringTable == null ? null : dtStringTable.getValue();
+		if (stringTable == null) {
+			return result;
+		}
 		for (int needed : dtNeeded) {
 			result.add(stringTable.get(needed));
 		}
@@ -442,7 +445,7 @@ public class ElfDynamicStructure {
 	}
 
 	public ElfSymbolStructure getSymbolStructure() throws IOException {
-		return symbolStructure.getValue();
+		return symbolStructure == null ? null : symbolStructure.getValue();
 	}
 
 	public Collection<MemoizedObject<ElfRelocation>> getRelocations() throws IOException {

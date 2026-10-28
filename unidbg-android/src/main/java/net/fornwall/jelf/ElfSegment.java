@@ -140,9 +140,15 @@ public class ElfSegment {
 			ptLoad = new MemoizedObject<PtLoadData>() {
 				@Override
 				protected PtLoadData computeValue() throws ElfException {
-					parser.seek(ElfSegment.this.offset);
-					ByteBuffer buffer = parser.readBuffer((int) file_size);
-					return new PtLoadData(buffer, file_size);
+					long segmentOffset = ElfSegment.this.offset;
+					int capacity = parser.getCapacity();
+					if (segmentOffset >= capacity) {
+						return new PtLoadData(ByteBuffer.allocate(0), 0);
+					}
+					parser.seek(segmentOffset);
+					int readSize = (int) Math.min(file_size, capacity - segmentOffset);
+					ByteBuffer buffer = parser.readBuffer(readSize);
+					return new PtLoadData(buffer, readSize);
 				}
 			};
 			break;
