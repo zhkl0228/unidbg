@@ -1,5 +1,7 @@
 package com.github.unidbg.arm;
 
+import com.github.unidbg.Module;
+
 import capstone.api.Instruction;
 import capstone.api.RegsAccess;
 import com.alibaba.fastjson.JSONObject;

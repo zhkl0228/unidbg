@@ -1,5 +1,7 @@
 package com.github.unidbg.ios;
 
+import com.github.unidbg.Module;
+
 import com.github.unidbg.*;
 import com.github.unidbg.arm.ARM;
 import com.github.unidbg.arm.Arm64Hook;
