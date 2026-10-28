@@ -75,16 +75,22 @@ class ApkFile implements Apk {
             return signatures;
         }
 
+        List<CertificateMeta> v1Signatures = new ArrayList<>(10);
         try (net.dongliu.apk.parser.ApkFile apkFile = new net.dongliu.apk.parser.ApkFile(this.apkFile)) {
-            List<CertificateMeta> signatures = new ArrayList<>(10);
             for (ApkSigner signer : apkFile.getApkSingers()) {
-                signatures.addAll(signer.getCertificateMetas());
+                v1Signatures.addAll(signer.getCertificateMetas());
             }
-            this.signatures = signatures.toArray(new CertificateMeta[0]);
-            return this.signatures;
-        } catch (IOException | CertificateException e) {
+        } catch (IOException e) {
             throw new IllegalStateException(e);
+        } catch (CertificateException ignored) { // 没有 v1 签名
         }
+
+        if (!v1Signatures.isEmpty()) {
+            this.signatures = v1Signatures.toArray(new CertificateMeta[0]);
+        } else {
+            this.signatures = ApkSigningBlockParser.parse(this.apkFile);
+        }
+        return this.signatures;
     }
 
     @Override
