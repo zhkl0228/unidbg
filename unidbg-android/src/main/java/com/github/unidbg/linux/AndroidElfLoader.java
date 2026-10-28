@@ -645,7 +645,9 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
                 for (Map.Entry<String, ModuleSymbol> entry : linuxModule.resolvedSymbols.entrySet()) {
                     ElfSymbol symbol = module.getELFSymbolByName(entry.getKey());
                     if (symbol != null && !symbol.isUndef()) {
-                        entry.getValue().relocation(emulator, module, symbol);
+                        long value = entry.getValue().relocation(emulator, module, symbol);
+                        linuxModule.registerImportedSymbol(UnidbgPointer.nativeValue(entry.getValue().getRelocationAddr()),
+                                module.name, symbol.getName(), value);
                     }
                 }
                 linuxModule.resolvedSymbols.clear();
