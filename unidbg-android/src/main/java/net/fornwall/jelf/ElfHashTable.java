@@ -42,7 +42,8 @@ class ElfHashTable implements HashTable {
 	private static long elf_hash(String name) {
 		long h = 0, g;
 
-		for(char c : name.toCharArray()) {
+		for (int i = 0; i < name.length(); i++) {
+			char c = name.charAt(i);
 			h = (h << 4) + c;
 			g = h & 0xf0000000L;
 			h ^= g;

@@ -1,0 +1,50 @@
+--- a/qemu/exec.c
++++ b/qemu/exec.c
+@@ -183,7 +183,8 @@
+ /* Compact a non leaf page entry. Simply detect that the entry has a single child,
+  * and update our entry so we can skip it and go directly to the destination.
+  */
+-static void phys_page_compact(struct uc_struct *uc, PhysPageEntry *lp, Node *nodes)
++static void phys_page_compact(struct uc_struct *uc, PhysPageEntry *lp, Node *nodes,
++                              int level)
+ {
+     unsigned valid_ptr = P_L2_SIZE;
+     int valid = 0;
+@@ -194,6 +195,15 @@
+         return;
+     }
+ 
++    /* Track the same radix level as phys_page_find, including compressed
++     * edges. Terminal nodes contain P_L2_SIZE leaf section entries (even
++     * holes use PHYS_SECTION_UNASSIGNED), so their scan cannot recurse or
++     * find a single child. Leave those already compact nodes untouched. */
++    level -= lp->skip;
++    if (level == 0) {
++        return;
++    }
++
+     p = nodes[lp->ptr];
+     for (i = 0; i < P_L2_SIZE; i++) {
+         if (p[i].ptr == PHYS_MAP_NODE_NIL) {
+@@ -203,7 +213,7 @@
+         valid_ptr = i;
+         valid++;
+         if (p[i].skip) {
+-            phys_page_compact(uc, &p[i], nodes);
++            phys_page_compact(uc, &p[i], nodes, level);
+         }
+     }
+ 
+@@ -236,8 +246,11 @@
+ 
+ void address_space_dispatch_compact(AddressSpaceDispatch *d)
+ {
++#ifdef TARGET_ARM
++    struct uc_struct *uc = d->uc;
++#endif
+     if (d->phys_map.skip) {
+-        phys_page_compact(d->uc, &d->phys_map, d->map.nodes);
++        phys_page_compact(d->uc, &d->phys_map, d->map.nodes, P_L2_LEVELS);
+     }
+ }
+ 

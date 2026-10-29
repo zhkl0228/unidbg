@@ -234,24 +234,31 @@ public class UnidbgPointer extends Pointer implements PointerArg {
         return getByteArray(offset, 1)[0];
     }
 
+    private long getScalar(long offset, int width) {
+        if (size > 0 && offset + width > size) {
+            throw new InvalidMemoryAccessException();
+        }
+        return backend.mem_read_value(peer + offset, width);
+    }
+
     @Override
     public char getChar(long offset) {
-        return getByteBuffer(offset, 2).getChar();
+        return (char) getScalar(offset, 2);
     }
 
     @Override
     public short getShort(long offset) {
-        return getByteBuffer(offset, 2).getShort();
+        return (short) getScalar(offset, 2);
     }
 
     @Override
     public int getInt(long offset) {
-        return getByteBuffer(offset, 4).getInt();
+        return (int) getScalar(offset, 4);
     }
 
     @Override
     public long getLong(long offset) {
-        return getByteBuffer(offset, 8).getLong();
+        return getScalar(offset, 8);
     }
 
     @Override
@@ -261,12 +268,12 @@ public class UnidbgPointer extends Pointer implements PointerArg {
 
     @Override
     public float getFloat(long offset) {
-        return getByteBuffer(offset, 4).getFloat();
+        return Float.intBitsToFloat((int) getScalar(offset, 4));
     }
 
     @Override
     public double getDouble(long offset) {
-        return getByteBuffer(offset, 8).getDouble();
+        return Double.longBitsToDouble(getScalar(offset, 8));
     }
 
     @Override
@@ -293,8 +300,18 @@ public class UnidbgPointer extends Pointer implements PointerArg {
         }
 
         int[] array = new int[arraySize];
-        for (int i = 0; i < arraySize; i++) {
-            array[i] = getInt(offset + i * 4);
+        // Bound temporary memory while amortizing Java/native crossings. Do not
+        // cache guest bytes: callers must observe writes made between reads.
+        for (int start = 0; start < arraySize; ) {
+            int count = Math.min(arraySize - start, 1024);
+            byte[] data = getByteArray(offset + start * 4L, count * 4);
+            for (int i = 0, position = 0; i < count; i++, position += 4) {
+                array[start + i] = (data[position] & 0xff) |
+                        ((data[position + 1] & 0xff) << 8) |
+                        ((data[position + 2] & 0xff) << 16) |
+                        (data[position + 3] << 24);
+            }
+            start += count;
         }
         return array;
     }
@@ -317,38 +334,60 @@ public class UnidbgPointer extends Pointer implements PointerArg {
     @Override
     public String getString(long offset, String encoding) {
         long addr = peer + offset;
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(0x40);
-        while (true) {
-            byte[] data = backend.mem_read(addr, 0x10);
-            int length = Utils.indexOfNullTerminator(data);
-            baos.write(data, 0, length);
-            addr += length;
-
-            if (length < data.length) { // reach zero
-                break;
-            }
-
-            if (baos.size() > 0x40000) { // 256k
-                throw new IllegalStateException("buffer overflow");
-            }
-
-            if (size > 0 && offset + baos.size() > size) {
-                throw new InvalidMemoryAccessException();
-            }
-        }
-
+        byte[] data = backend.mem_read(addr, 0x10);
+        int length = Utils.indexOfNullTerminator(data);
         try {
-            String ret = baos.toString(encoding);
-            log.debug("getString pointer={}, size={}, encoding={}, ret={}", this, baos.size(), encoding, ret);
-            return ret;
+            if (length < data.length) {
+                return stringResult(new String(data, 0, length, encoding), length, encoding);
+            }
+            return readLongString(offset, addr, data, encoding);
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private ByteBuffer allocateBuffer(int size) {
-        return ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
+    private String readLongString(long offset, long addr, byte[] data, String encoding)
+            throws UnsupportedEncodingException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(0x40);
+        while (true) {
+            int length = Utils.indexOfNullTerminator(data);
+            baos.write(data, 0, length);
+            addr += length;
+            if (length < data.length) { // reach zero
+                break;
+            }
+            if (baos.size() > 0x40000) { // 256k
+                throw new IllegalStateException("buffer overflow");
+            }
+            if (size > 0 && offset + baos.size() > size) {
+                throw new InvalidMemoryAccessException();
+            }
+            data = backend.mem_read(addr, 0x10);
+        }
+        return stringResult(baos.toString(encoding), baos.size(), encoding);
+    }
+
+    private String stringResult(String value, int length, String encoding) {
+        if (log.isDebugEnabled()) {
+            log.debug("getString pointer={}, size={}, encoding={}, ret={}", this, length, encoding, value);
+        }
+        return value;
+    }
+
+    private void setScalar(long offset, long value, int width) {
+        if (size > 0) {
+            if (offset < 0) {
+                throw new IllegalArgumentException();
+            }
+            if (size - offset < width) {
+                throw new InvalidMemoryAccessException();
+            }
+        }
+        long address = peer + offset;
+        backend.mem_write_value(address, value, width);
+        if (listener != null) {
+            listener.onSystemWriteValue(address, value, width);
+        }
     }
 
     @Override
@@ -360,27 +399,27 @@ public class UnidbgPointer extends Pointer implements PointerArg {
 
     @Override
     public void setByte(long offset, byte value) {
-        write(offset, new byte[] { value }, 0, 1);
+        setScalar(offset, value, 1);
     }
 
     @Override
     public void setShort(long offset, short value) {
-        write(offset, allocateBuffer(2).putShort(value).array(), 0, 2);
+        setScalar(offset, value, 2);
     }
 
     @Override
     public void setChar(long offset, char value) {
-        write(offset, allocateBuffer(2).putChar(value).array(), 0, 2);
+        setScalar(offset, value, 2);
     }
 
     @Override
     public void setInt(long offset, int value) {
-        write(offset, allocateBuffer(4).putInt(value).array(), 0, 4);
+        setScalar(offset, value, 4);
     }
 
     @Override
     public void setLong(long offset, long value) {
-        write(offset, allocateBuffer(8).putLong(value).array(), 0, 8);
+        setScalar(offset, value, 8);
     }
 
     @Override
@@ -390,12 +429,12 @@ public class UnidbgPointer extends Pointer implements PointerArg {
 
     @Override
     public void setFloat(long offset, float value) {
-        write(offset, allocateBuffer(4).putFloat(value).array(), 0, 4);
+        setScalar(offset, Float.floatToRawIntBits(value), 4);
     }
 
     @Override
     public void setDouble(long offset, double value) {
-        write(offset, allocateBuffer(8).putDouble(value).array(), 0, 8);
+        setScalar(offset, Double.doubleToRawLongBits(value), 8);
     }
 
     @Override

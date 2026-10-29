@@ -386,8 +386,27 @@ JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1w
   (JNIEnv *env, jclass cls, jlong handle, jlong address, jbyteArray bytes) {
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
-  jbyte *array = (*env)->GetByteArrayElements(env, bytes, NULL);
+  if (bytes == NULL) {
+    jclass exception = (*env)->FindClass(env, "java/lang/NullPointerException");
+    if (exception != NULL) {
+      (*env)->ThrowNew(env, exception, "bytes");
+    }
+    return;
+  }
   jsize size = (*env)->GetArrayLength(env, bytes);
+  if (size > 0 && size <= 4096) {
+    jbyte buffer[4096];
+    (*env)->GetByteArrayRegion(env, bytes, 0, size, buffer);
+    if ((*env)->ExceptionCheck(env)) {
+      return;
+    }
+    throwException(env, uc_mem_write(eng, (uint64_t)address, buffer, (size_t)size));
+    return;
+  }
+  jbyte *array = (*env)->GetByteArrayElements(env, bytes, NULL);
+  if (array == NULL) {
+    return;
+  }
   uc_err err = uc_mem_write(eng, (uint64_t)address, array, (size_t)size);
   if (err != UC_ERR_OK) {
     throwException(env, err);
@@ -404,8 +423,33 @@ JNIEXPORT jbyteArray JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_
   (JNIEnv *env, jclass cls, jlong handle, jlong address, jlong size) {
   t_unicorn unicorn = (t_unicorn) handle;
   uc_engine *eng = unicorn->uc;
+  // JNI arrays use jsize. Never truncate the allocation while passing a larger
+  // length to Unicorn, which would otherwise overrun the destination buffer.
+  if (size < 0 || size > INT32_MAX) {
+    jclass exception = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+    if (exception != NULL) {
+      (*env)->ThrowNew(env, exception, "Memory read size is outside Java array range");
+    }
+    return NULL;
+  }
   jbyteArray bytes = (*env)->NewByteArray(env, (jsize)size);
+  if (bytes == NULL) {
+    return NULL;
+  }
+  if (size > 0 && size <= 4096) {
+    jbyte buffer[4096];
+    uc_err err = uc_mem_read(eng, (uint64_t)address, buffer, (size_t)size);
+    if (err != UC_ERR_OK) {
+      throwException(env, err);
+      return NULL;
+    }
+    (*env)->SetByteArrayRegion(env, bytes, 0, (jsize)size, buffer);
+    return bytes;
+  }
   jbyte *array = (*env)->GetByteArrayElements(env, bytes, NULL);
+  if (array == NULL) {
+    return NULL;
+  }
   uc_err err = uc_mem_read(eng, (uint64_t)address, array, (size_t)size);
   if (err != UC_ERR_OK) {
     throwException(env, err);
@@ -789,4 +833,53 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
   cachedJVM = jvm;
 
   return JNI_VERSION_1_6;
+}
+
+/* Optional scalar API: use the same uc_mem_read checks, without Java array copies. */
+JNIEXPORT jint JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_scalar_1memory_1api_1version
+  (JNIEnv *env, jclass cls) {
+  return 2;
+}
+
+JNIEXPORT jlong JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1read_1value
+  (JNIEnv *env, jclass cls, jlong handle, jlong address, jint size) {
+  if (size != 1 && size != 2 && size != 4 && size != 8) {
+    jclass exception = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+    if (exception != NULL) {
+      (*env)->ThrowNew(env, exception, "Invalid scalar size");
+    }
+    return 0;
+  }
+  t_unicorn unicorn = (t_unicorn) handle;
+  uint8_t bytes[8];
+  uc_err err = uc_mem_read(unicorn->uc, (uint64_t) address, bytes, (size_t) size);
+  if (err != UC_ERR_OK) {
+    throwException(env, err);
+    return 0;
+  }
+  uint64_t value = 0;
+  int i;
+  for (i = 0; i < size; i++) {
+    value |= ((uint64_t) bytes[i]) << (i * 8);
+  }
+  return (jlong) value;
+}
+
+JNIEXPORT void JNICALL Java_com_github_unidbg_arm_backend_unicorn_Unicorn_mem_1write_1value
+  (JNIEnv *env, jclass cls, jlong handle, jlong address, jlong value, jint size) {
+  if (size != 1 && size != 2 && size != 4 && size != 8) {
+    jclass exception = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
+    if (exception != NULL) {
+      (*env)->ThrowNew(env, exception, "Invalid scalar size");
+    }
+    return;
+  }
+  uint8_t bytes[8];
+  uint64_t bits = (uint64_t) value;
+  int i;
+  for (i = 0; i < size; i++) {
+    bytes[i] = (uint8_t) (bits >> (i * 8));
+  }
+  t_unicorn unicorn = (t_unicorn) handle;
+  throwException(env, uc_mem_write(unicorn->uc, (uint64_t) address, bytes, (size_t) size));
 }

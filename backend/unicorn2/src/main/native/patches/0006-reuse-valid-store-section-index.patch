@@ -1,0 +1,121 @@
+--- a/qemu/include/exec/cpu-defs.h
++++ b/qemu/include/exec/cpu-defs.h
+@@ -141,6 +141,11 @@
+      */
+     hwaddr addr;
+     MemTxAttrs attrs;
++#if UINTPTR_MAX == UINT64_MAX
++    /* Direct RAM section in the same dispatch, valid only with this TLB tag.
++     * This occupies existing tail padding on the supported 64-bit hosts. */
++    uint32_t ram_section_index;
++#endif
+ } CPUIOTLBEntry;
+ 
+ /*
+--- a/qemu/accel/tcg/cputlb.c
++++ b/qemu/accel/tcg/cputlb.c
+@@ -933,6 +933,24 @@
+      */
+     desc->iotlb[index].addr = iotlb - vaddr_page;
+     desc->iotlb[index].attrs = attrs;
++#if UINTPTR_MAX == UINT64_MAX
++    desc->iotlb[index].ram_section_index = UINT32_MAX;
++    /* A direct section in the original dispatch covering the complete physical
++     * page is also the result of the ordinary physical-address mapping query.
++     * Section bounds (not just MemoryRegion bounds) exclude subpage/IOMMU
++     * redirections that would select a different mapping. */
++    if (is_ram && !section->mr->subpage && section->fv &&
++        flatview_to_dispatch(section->fv) == cpu->cpu_ases[asidx].memory_dispatch &&
++        cpu->cpu_ases[asidx].memory_dispatch ==
++            address_space_to_dispatch(&cpu->uc->address_space_memory) &&
++        paddr_page >= section->offset_within_address_space &&
++        int128_ge(section->size,
++                  int128_add(int128_make64(paddr_page - section->offset_within_address_space),
++                             int128_make64(TARGET_PAGE_SIZE)))) {
++        desc->iotlb[index].ram_section_index =
++            memory_region_section_get_iotlb(cpu, section);
++    }
++#endif
+ 
+     /* Now calculate the new entry */
+     tn.addend = addend - vaddr_page;
+@@ -2193,14 +2211,27 @@
+         tlb_addr = tlb_addr_write(entry) & ~TLB_INVALID_MASK;
+     }
+ 
++    /* Callback/recovery paths invalidate this fact before changing mappings. */
++    mapping_stable = !uc->snapshot_level &&
++        !HOOK_EXISTS(uc, UC_HOOK_MEM_WRITE);
++
+     // Load the latest memory mapping.
+     paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
+-    mr = uc->memory_mapping(uc, paddr);
+-
+-    /* Remember whether the first mapping remains valid through this access.
+-     * Callback/recovery paths invalidate this fact before changing mappings. */
+-    mapping_stable = !uc->snapshot_level &&
+-        !HOOK_EXISTS(uc, UC_HOOK_MEM_WRITE);
++    mr = NULL;
++#if UINTPTR_MAX == UINT64_MAX
++    /* An index has no independent lifetime: consult it only with a valid
++     * matching TLB tag, before any callback, and never retain it across reentry.
++     * Invalid/subpage entries, snapshots and write hooks use the old query. */
++    if (mapping_stable && tlb_hit(uc, tlb_addr_write(entry), addr)) {
++        CPUIOTLBEntry *io = &env_tlb(env)->d[mmu_idx].iotlb[index];
++        if (io->ram_section_index != UINT32_MAX) {
++            mr = iotlb_to_section(env_cpu(env), io->ram_section_index, io->attrs)->mr;
++        }
++    }
++#endif
++    if (mr == NULL) {
++        mr = uc->memory_mapping(uc, paddr);
++    }
+ 
+     if (!uc->size_recur_mem) { // disabling write callback if in recursive call
+         // Unicorn: callback on memory write
+--- a/qemu/exec.c
++++ b/qemu/exec.c
+@@ -97,19 +97,7 @@
+ 
+ static void tcg_commit(MemoryListener *listener);
+ 
+-/**
+- * CPUAddressSpace: all the information a CPU needs about an AddressSpace
+- * @cpu: the CPU whose AddressSpace this is
+- * @as: the AddressSpace itself
+- * @memory_dispatch: its dispatch pointer (cached, RCU protected)
+- * @tcg_as_listener: listener for tracking changes to the AddressSpace
+- */
+-struct CPUAddressSpace {
+-    CPUState *cpu;
+-    AddressSpace *as;
+-    struct AddressSpaceDispatch *memory_dispatch;
+-    MemoryListener tcg_as_listener;
+-};
++
+ 
+ 
+ static void phys_map_node_reserve(AddressSpaceDispatch *d, PhysPageMap *map, unsigned nodes)
+--- a/qemu/include/exec/memory-internal.h
++++ b/qemu/include/exec/memory-internal.h
+@@ -21,6 +21,20 @@
+ #define MEMORY_INTERNAL_H
+ 
+ #include "cpu.h"
++
++/**
++ * CPUAddressSpace: all the information a CPU needs about an AddressSpace
++ * @cpu: the CPU whose AddressSpace this is
++ * @as: the AddressSpace itself
++ * @memory_dispatch: its dispatch pointer (cached, RCU protected)
++ * @tcg_as_listener: listener for tracking changes to the AddressSpace
++ */
++struct CPUAddressSpace {
++    CPUState *cpu;
++    AddressSpace *as;
++    struct AddressSpaceDispatch *memory_dispatch;
++    MemoryListener tcg_as_listener;
++};
+ 
+ static inline AddressSpaceDispatch *flatview_to_dispatch(FlatView *fv)
+ {

@@ -1,0 +1,46 @@
+--- a/qemu/exec.c
++++ b/qemu/exec.c
+@@ -1494,6 +1494,16 @@
+     return &sections[index & ~TARGET_PAGE_MASK];
+ }
+ 
++/* The caller must hold a matching valid RAM TLB entry whose fill proved
++ * membership in this global dispatch.  Never retain the returned pointer
++ * across a callback, refill or topology change. */
++MemoryRegion *memory_region_from_cached_ram_section(struct uc_struct *uc,
++                                                   uint32_t index)
++{
++    AddressSpaceDispatch *d = address_space_to_dispatch(&uc->address_space_memory);
++    return d->map.sections[index & ~TARGET_PAGE_MASK].mr;
++}
++
+ static void io_mem_init(struct uc_struct *uc)
+ {
+     memory_region_init_io(uc, &uc->io_mem_unassigned, &unassigned_mem_ops, NULL,
+--- a/qemu/include/exec/memory-internal.h
++++ b/qemu/include/exec/memory-internal.h
+@@ -46,6 +46,13 @@
+     return flatview_to_dispatch(address_space_to_flatview(as));
+ }
+ 
++#ifdef UNICORN_ARCH_POSTFIX
++#define memory_region_from_cached_ram_section \
++    glue(memory_region_from_cached_ram_section, UNICORN_ARCH_POSTFIX)
++#endif
++MemoryRegion *memory_region_from_cached_ram_section(struct uc_struct *uc,
++                                                   uint32_t index);
++
+ FlatView *address_space_get_flatview(AddressSpace *as);
+ void flatview_unref(FlatView *view);
+ 
+--- a/qemu/accel/tcg/cputlb.c
++++ b/qemu/accel/tcg/cputlb.c
+@@ -2225,7 +2225,7 @@
+     if (mapping_stable && tlb_hit(uc, tlb_addr_write(entry), addr)) {
+         CPUIOTLBEntry *io = &env_tlb(env)->d[mmu_idx].iotlb[index];
+         if (io->ram_section_index != UINT32_MAX) {
+-            mr = iotlb_to_section(env_cpu(env), io->ram_section_index, io->attrs)->mr;
++            mr = memory_region_from_cached_ram_section(uc, io->ram_section_index);
+         }
+     }
+ #endif

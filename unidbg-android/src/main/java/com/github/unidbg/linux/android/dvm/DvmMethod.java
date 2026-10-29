@@ -41,8 +41,20 @@ public class DvmMethod extends Hashable {
         return args;
     }
 
+    private volatile String signatureCache;
+
     public final String getSignature() {
-        return dvmClass.getClassName() + "->" + methodName + args;
+        String signature = signatureCache;
+        if (signature != null) {
+            return signature;
+        }
+        signature = dvmClass.getClassName() + "->" + methodName + args;
+        // Custom DvmClass implementations may return changing class names.
+        if (dvmClass.getClass() == DvmClass.class && dvmClass.vm != null &&
+                dvmClass.vm.reserveSignatureCache(signature)) {
+            signatureCache = signature;
+        }
+        return signature;
     }
 
     public boolean isStatic() {

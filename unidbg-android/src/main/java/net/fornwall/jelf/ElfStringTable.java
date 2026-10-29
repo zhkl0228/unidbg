@@ -1,7 +1,6 @@
 package net.fornwall.jelf;
 
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
 final class ElfStringTable {
@@ -15,15 +14,21 @@ final class ElfStringTable {
 		buffer = parser.readBuffer(length);
 	}
 
-	private final ByteArrayOutputStream baos = new ByteArrayOutputStream(16);
+	private byte[] scratch = new byte[16];
 
 	String get(int index) {
 		buffer.position(index);
-		baos.reset();
-		byte b;
-		while((b = buffer.get()) != 0) {
-			baos.write(b);
+		while (buffer.get() != 0) {
+			// Scan first, then bulk-copy without a synchronized write per byte.
 		}
-		return baos.toString();
+		int end = buffer.position();
+		int length = end - index - 1;
+		if (scratch.length < length) {
+			scratch = new byte[Math.max(scratch.length << 1, length)];
+		}
+		buffer.position(index);
+		buffer.get(scratch, 0, length);
+		buffer.position(end);
+		return new String(scratch, 0, length);
 	}
 }

@@ -55,6 +55,41 @@ class ByteArrayBackend extends AbstractBackend implements Backend {
     }
 
     @Override
+    public long mem_read_value(long address, int size) throws BackendException {
+        if (size != 1 && size != 2 && size != 4 && size != 8) {
+            throw new IllegalArgumentException("Invalid scalar size: " + size);
+        }
+        int start = (int) address;
+        if (start < 0 || start > data.length || size > Integer.MAX_VALUE - start) {
+            return Backend.super.mem_read_value(address, size);
+        }
+        // Arrays.copyOfRange pads reads beyond the end with zeroes. Preserve
+        // that behavior, and its int address conversion, without a copy.
+        int count = Math.min(size, data.length - start);
+        long value = 0;
+        for (int i = 0; i < count; i++) {
+            value |= (data[start + i] & 0xffL) << (i * 8);
+        }
+        return value;
+    }
+
+    @Override
+    public void mem_write_value(long address, long value, int size) throws BackendException {
+        if (size != 1 && size != 2 && size != 4 && size != 8) {
+            throw new IllegalArgumentException("Invalid scalar size: " + size);
+        }
+        int start = (int) address;
+        if (start < 0 || start > data.length || size > data.length - start) {
+            // Keep System.arraycopy's bounds failures and all-or-nothing write.
+            Backend.super.mem_write_value(address, value, size);
+            return;
+        }
+        for (int i = 0; i < size; i++) {
+            data[start + i] = (byte) (value >>> (i * 8));
+        }
+    }
+
+    @Override
     public void mem_write(long address, byte[] bytes) throws BackendException {
         System.arraycopy(bytes, 0, data, (int) address, bytes.length);
     }

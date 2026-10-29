@@ -18,6 +18,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class BaseVM implements VM, DvmClassFactory {
 
@@ -31,6 +32,22 @@ public abstract class BaseVM implements VM, DvmClassFactory {
         } else {
             throw new IllegalStateException("Invalid boolean value=" + value);
         }
+    }
+
+    // Bound retained signature strings per VM rather than growing a global cache.
+    // Charge conservatively for UTF-16 content, object/array headers and padding.
+    private final AtomicInteger signatureCacheBudget = new AtomicInteger(32 * 1024);
+
+    final boolean reserveSignatureCache(String signature) {
+        long cost = 96L + 2L * signature.length();
+        int available = signatureCacheBudget.get();
+        while (cost <= available) {
+            if (signatureCacheBudget.compareAndSet(available, available - (int) cost)) {
+                return true;
+            }
+            available = signatureCacheBudget.get();
+        }
+        return false;
     }
 
     final Map<Integer, DvmClass> classMap = new HashMap<>();

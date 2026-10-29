@@ -2,9 +2,6 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 class ArmVarArg32 extends ArmVarArg {
 
     ArmVarArg32(Emulator<?> emulator, BaseVM vm, DvmMethod method) {
@@ -26,36 +23,24 @@ class ArmVarArg32 extends ArmVarArg {
                     if (offset % 2 == 0) {
                         offset++;
                     }
-                    ByteBuffer buffer = ByteBuffer.allocate(8);
-                    buffer.order(ByteOrder.LITTLE_ENDIAN);
-                    buffer.putInt(getInt(offset++));
-                    buffer.putInt(getInt(offset++));
-                    buffer.flip();
-                    args.add(buffer.getDouble());
+                    long value = (getInt(offset++) & 0xffffffffL) | ((long) getInt(offset++) << 32);
+                    args.add(Double.longBitsToDouble(value));
                     break;
                 }
                 case 'F': {
                     if (offset % 2 == 0) {
                         offset++;
                     }
-                    ByteBuffer buffer = ByteBuffer.allocate(8);
-                    buffer.order(ByteOrder.LITTLE_ENDIAN);
-                    buffer.putInt(getInt(offset++));
-                    buffer.putInt(getInt(offset++));
-                    buffer.flip();
-                    args.add((float) buffer.getDouble());
+                    long value = (getInt(offset++) & 0xffffffffL) | ((long) getInt(offset++) << 32);
+                    args.add((float) Double.longBitsToDouble(value));
                     break;
                 }
                 case 'J': {
                     if (offset % 2 == 0) {
                         offset++;
                     }
-                    ByteBuffer buffer = ByteBuffer.allocate(8);
-                    buffer.order(ByteOrder.LITTLE_ENDIAN);
-                    buffer.putInt(getInt(offset++));
-                    buffer.putInt(getInt(offset++));
-                    buffer.flip();
-                    args.add(buffer.getLong());
+                    long value = (getInt(offset++) & 0xffffffffL) | ((long) getInt(offset++) << 32);
+                    args.add(value);
                     break;
                 }
                 default:

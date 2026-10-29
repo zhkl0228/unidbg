@@ -35,8 +35,20 @@ public class DvmField extends Hashable {
         return isStatic;
     }
 
+    private volatile String signatureCache;
+
     final String getSignature() {
-        return dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+        String signature = signatureCache;
+        if (signature != null) {
+            return signature;
+        }
+        signature = dvmClass.getClassName() + "->" + fieldName + ":" + fieldType;
+        // Custom DvmClass implementations may return changing class names.
+        if (dvmClass.getClass() == DvmClass.class && dvmClass.vm != null &&
+                dvmClass.vm.reserveSignatureCache(signature)) {
+            signatureCache = signature;
+        }
+        return signature;
     }
 
     private Shorty[] shortyCache;

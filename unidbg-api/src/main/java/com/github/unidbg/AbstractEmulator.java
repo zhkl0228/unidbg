@@ -221,6 +221,22 @@ public abstract class AbstractEmulator<T extends NewFileIO> implements Emulator<
     private long traceSystemMemoryWriteEnd;
     private boolean traceSystemMemoryWrite;
     private TraceSystemMemoryWriteListener traceSystemMemoryWriteListener;
+    private final boolean customSystemWriteObserver = hasCustomSystemWriteObserver();
+
+    private boolean hasCustomSystemWriteObserver() {
+        try {
+            return getClass().getMethod("onSystemWrite", long.class, byte[].class).getDeclaringClass() != AbstractEmulator.class;
+        } catch (ReflectiveOperationException | SecurityException e) {
+            return true; // Conservatively preserve callbacks when detection is restricted.
+        }
+    }
+
+    @Override
+    public void onSystemWriteValue(long addr, long value, int size) {
+        if (traceSystemMemoryWrite || customSystemWriteObserver) {
+            MemoryWriteListener.super.onSystemWriteValue(addr, value, size);
+        }
+    }
 
     @Override
     public void setTraceSystemMemoryWrite(long begin, long end, TraceSystemMemoryWriteListener listener) {
