@@ -14,7 +14,23 @@ jobs:
           distribution: "zulu"
           java-version: "8"
       - run: |
+          # Jitpack builds artifacts on demand: the first request for a new
+          # commit triggers a build that takes minutes, and fetching the
+          # artifact before the build finishes fails. Retry until the
+          # artifact is ready instead of failing the run on the first try.
           GIT_SHA=$(echo ${{ github.sha }} | cut -c1-10)
-          mvn org.apache.maven.plugins:maven-dependency-plugin:3.9.0:get \
-            -DremoteRepositories=https://jitpack.io \
-            -Dartifact=com.github.zhkl0228:unidbg:$GIT_SHA
+          for i in $(seq 1 20); do
+            echo "Attempt $i: fetching unidbg:$GIT_SHA from Jitpack..."
+            if mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.9.0:get \
+              -DremoteRepositories=https://jitpack.io \
+              -Dartifact=com.github.zhkl0228:unidbg:$GIT_SHA; then
+              echo "Artifact is ready."
+              exit 0
+            fi
+            if [ "$i" -lt 20 ]; then
+              echo "Artifact not ready yet, waiting 60s for the Jitpack build..."
+              sleep 60
+            fi
+          done
+          echo "Artifact still not available after 20 attempts."
+          exit 1
