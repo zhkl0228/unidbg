@@ -16,9 +16,12 @@ jobs:
       - run: |
           # Jitpack builds artifacts on demand: the first request for a new
           # commit triggers a build that takes minutes, and fetching the
-          # artifact before the build finishes fails. Retry until the
-          # artifact is ready instead of failing the run on the first try.
+          # artifact before the build finishes fails. Retry while the build
+          # is pending, but stop as soon as Jitpack reports a failed build.
           GIT_SHA=$(echo ${{ github.sha }} | cut -c1-10)
+          BUILD_LOG_URL="https://jitpack.io/com/github/zhkl0228/unidbg/$GIT_SHA/build.log"
+          BUILD_LOG_FILE=$(mktemp)
+          trap 'rm -f "$BUILD_LOG_FILE"' EXIT
           for i in $(seq 1 20); do
             echo "Attempt $i: fetching unidbg:$GIT_SHA from Jitpack..."
             if mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.9.0:get \
@@ -26,6 +29,13 @@ jobs:
               -Dartifact=com.github.zhkl0228:unidbg:$GIT_SHA; then
               echo "Artifact is ready."
               exit 0
+            fi
+            if curl --fail --silent --show-error --location --max-time 30 \
+              --output "$BUILD_LOG_FILE" "$BUILD_LOG_URL" && \
+              grep -Eq '^(Build tool exit code|Exit code): [1-9][0-9]*$|Build failed\.' "$BUILD_LOG_FILE"; then
+              echo "Jitpack build failed. Last 100 log lines:"
+              tail -n 100 "$BUILD_LOG_FILE"
+              exit 1
             fi
             if [ "$i" -lt 20 ]; then
               echo "Artifact not ready yet, waiting 60s for the Jitpack build..."
