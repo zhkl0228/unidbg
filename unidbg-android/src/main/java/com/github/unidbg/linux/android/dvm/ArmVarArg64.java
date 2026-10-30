@@ -2,10 +2,9 @@ package com.github.unidbg.linux.android.dvm;
 
 import com.github.unidbg.Emulator;
 import com.github.unidbg.pointer.UnidbgPointer;
+import com.github.unidbg.arm.context.RegisterContext;
+import com.github.unidbg.arm.context.BackendArm64RegisterContext;
 import unicorn.Arm64Const;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 class ArmVarArg64 extends ArmVarArg {
 
@@ -34,8 +33,7 @@ class ArmVarArg64 extends ArmVarArg {
                     break;
                 }
                 case 'J': {
-                    UnidbgPointer ptr = getArg(offset++);
-                    args.add(ptr == null ? 0L : ptr.peer);
+                    args.add(getLongValue64(offset++));
                     break;
                 }
                 default:
@@ -44,11 +42,31 @@ class ArmVarArg64 extends ArmVarArg {
         }
     }
 
+    private long getLongValue64(int index) {
+        RegisterContext context = emulator.getContext();
+        if (context.getClass() == BackendArm64RegisterContext.class) {
+            int argument = 3 + index;
+            if (argument < 8) {
+                return context.getLongByReg(Arm64Const.UC_ARM64_REG_X0 + argument);
+            }
+            return context.getStackPointer().getLong((long) (argument - 8) * 8);
+        }
+        UnidbgPointer ptr = getArg(index);
+        return ptr == null ? 0L : ptr.peer;
+    }
+
     private double getVectorArg(int index) {
-        ByteBuffer buffer = ByteBuffer.allocate(16);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.put(emulator.getBackend().reg_read_vector(Arm64Const.UC_ARM64_REG_Q0 + index));
-        buffer.flip();
-        return buffer.getDouble();
+        byte[] vector = emulator.getBackend().reg_read_vector(Arm64Const.UC_ARM64_REG_Q0 + index);
+        if (vector.length > 16) {
+            throw new java.nio.BufferOverflowException();
+        }
+        if (vector.length < 8) {
+            throw new java.nio.BufferUnderflowException();
+        }
+        long value = 0;
+        for (int i = 0; i < 8; i++) {
+            value |= (vector[i] & 0xffL) << (i * 8);
+        }
+        return Double.longBitsToDouble(value);
     }
 }

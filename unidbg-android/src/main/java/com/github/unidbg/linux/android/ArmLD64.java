@@ -58,6 +58,50 @@ public class ArmLD64 extends Dlfcn {
                         private MemoryBlock block;
                         @Override
                         public UnidbgPointer onRegister(SvcMemory svcMemory, int svcNumber) {
+                            // Normal service numbers fit the fixed 29-instruction trampoline.
+                            // Keep the existing assembler path for reserved or unusual inputs,
+                            // preserving its acceptance, failures, and resource-close ordering.
+                            if (svcNumber >= 0 && svcNumber < Arm64Svc.SVC_MAX - 1 &&
+                                    Svc.POST_CALLBACK_SYSCALL_NUMBER >= 0 &&
+                                    Svc.POST_CALLBACK_SYSCALL_NUMBER <= 0xffff) {
+                                ByteBuffer buffer = ByteBuffer.allocate(116).order(ByteOrder.LITTLE_ENDIAN);
+                                buffer.putInt(0xd10043ff); // sub sp, sp, #0x10
+                                buffer.putInt(0xa9007bfd); // stp x29, x30, [sp]
+                                buffer.putInt(Arm64Svc.assembleSvc(svcNumber)); // svc #svcNumber
+                                buffer.putInt(0xf94003ed); // ldr x13, [sp]
+                                buffer.putInt(0x910023ff); // add sp, sp, #8
+                                buffer.putInt(0xf10001bf); // cmp x13, #0
+                                buffer.putInt(0x54000200); // b.eq 0x58
+                                buffer.putInt(0xf94003e0); // ldr x0, [sp]
+                                buffer.putInt(0x910023ff); // add sp, sp, #8
+                                buffer.putInt(0xf94003e1); // ldr x1, [sp]
+                                buffer.putInt(0x910023ff); // add sp, sp, #8
+                                buffer.putInt(0xf94003e2); // ldr x2, [sp]
+                                buffer.putInt(0x910023ff); // add sp, sp, #8
+                                buffer.putInt(0xd63f01a0); // blr x13
+                                buffer.putInt(0x7100001f); // cmp w0, #0
+                                buffer.putInt(0x54fffe80); // b.eq 0x0c
+                                buffer.putInt(0xf94003ed); // ldr x13, [sp]
+                                buffer.putInt(0x910023ff); // add sp, sp, #8
+                                buffer.putInt(0xf10001bf); // cmp x13, #0
+                                buffer.putInt(0x54000060); // b.eq 0x58
+                                buffer.putInt(0x910063ff); // add sp, sp, #0x18
+                                buffer.putInt(0x17fffffb); // b 0x40
+                                buffer.putInt(0xd2800008); // mov x8, #0
+                                buffer.putInt(0xd280000c | (svcNumber << 5)); // mov x12, #svcNumber
+                                buffer.putInt(0xd2800010 | (Svc.POST_CALLBACK_SYSCALL_NUMBER << 5)); // mov x16, #POST_CALLBACK_SYSCALL_NUMBER
+                                buffer.putInt(0xd4000001); // svc #0
+                                buffer.putInt(0xa9407bfd); // ldp x29, x30, [sp]
+                                buffer.putInt(0x910043ff); // add sp, sp, #0x10
+                                buffer.putInt(0xd65f03c0); // ret
+                                byte[] code = buffer.array();
+                                UnidbgPointer pointer = svcMemory.allocate(code.length, "dl_iterate_phdr");
+                                pointer.write(0, code, 0, code.length);
+                                if (log.isDebugEnabled()) {
+                                    log.debug("dl_iterate_phdr: pointer={}", pointer);
+                                }
+                                return pointer;
+                            }
                             try (Keystone keystone = new Keystone(KeystoneArchitecture.Arm64, KeystoneMode.LittleEndian)) {
                                 KeystoneEncoded encoded = keystone.assemble(Arrays.asList(
                                         "sub sp, sp, #0x10",

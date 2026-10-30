@@ -1,0 +1,102 @@
+--- a/qemu/accel/tcg/cpu-exec.c
++++ b/qemu/accel/tcg/cpu-exec.c
+@@ -28,6 +28,10 @@
+ #include "exec/tb-lookup.h"
+ #include "sysemu/cpus.h"
+ #include "uc_priv.h"
++#ifdef TARGET_ARM
++#include "exec/helper-proto.h"
++#include "exec/cpu_ldst.h"
++#endif
+ 
+ /* -icount align implementation. */
+ 
+@@ -244,6 +248,77 @@
+     return;
+ }
+ 
++#ifdef TARGET_ARM
++/* An exit-only TB has no guest instructions or CODE/BLOCK callbacks.  Keep
++ * exceptional translation modes on the original path, and reuse WFI itself
++ * rather than duplicating its interrupt, trap and nested-exit semantics. */
++static bool arm_exit_without_tb_allowed(CPUState *cpu, target_ulong pc,
++                                        uint32_t flags, uint32_t cflags)
++{
++    CPUARMState *env = cpu->env_ptr;
++    struct uc_struct *uc = cpu->uc;
++    bool a64 = FIELD_EX32(flags, TBFLAG_ANY, AARCH64_STATE);
++    return TARGET_PAGE_BITS >= TARGET_PAGE_BITS_MIN &&
++           uc_addr_is_exit(cpu->uc, pc) && !cpu->singlestep_enabled &&
++           !FIELD_EX32(flags, TBFLAG_ANY, SS_ACTIVE) &&
++           (a64 || !FIELD_EX32(flags, TBFLAG_AM32, CONDEXEC)) &&
++           !arm_feature(env, ARM_FEATURE_M) &&
++           !(cflags & (CF_COUNT_MASK | CF_LAST_IO | CF_NOCACHE | CF_USE_ICOUNT)) &&
++           !HOOK_EXISTS(cpu->uc, UC_HOOK_EDGE_GENERATED) &&
++           !HOOK_EXISTS(cpu->uc, UC_HOOK_TLB_FILL) &&
++           !cpu->exit_request && !cpu_loop_exit_requested(cpu);
++}
++
++static QEMU_NOINLINE void arm_try_exit_without_tb(CPUState *cpu, target_ulong pc,
++                                    target_ulong cs_base, uint32_t flags,
++                                    uint32_t cflags)
++{
++    CPUARMState *env = cpu->env_ptr;
++    struct uc_struct *uc = cpu->uc;
++    target_ulong checked_pc, checked_base;
++    uint32_t checked_flags;
++    int mmu_idx;
++    target_ulong previous_page = (pc - 1) & TARGET_PAGE_MASK;
++    if (!arm_exit_without_tb_allowed(cpu, pc, flags, cflags)) {
++        return;
++    }
++    /* Only take the fast path with both translations already resolved to
++     * full-page RAM.  A miss, victim hit, MMIO or subpage mapping must retain
++     * the original checks and their possible faults/callbacks.  The preceding
++     * page matters because tb_gen_code checks pc + size - 1 even for size 0. */
++    mmu_idx = cpu_mmu_index(env, true);
++    if (tlb_entry(env, mmu_idx, pc)->addr_code != (pc & TARGET_PAGE_MASK) ||
++        ((pc & TARGET_PAGE_MASK) != previous_page &&
++         tlb_entry(env, mmu_idx, previous_page)->addr_code != previous_page)) {
++        return;
++    }
++    /* Recheck execution state and exit flags before using the exit helper. */
++    cpu_get_tb_cpu_state(env, &checked_pc, &checked_base, &checked_flags);
++    if (checked_pc != pc || checked_base != cs_base || checked_flags != flags ||
++        !arm_exit_without_tb_allowed(cpu, pc, flags, cflags)) {
++        return;
++    }
++    HELPER(wfi)(env, !FIELD_EX32(flags, TBFLAG_ANY, AARCH64_STATE) &&
++                     FIELD_EX32(flags, TBFLAG_AM32, THUMB) ? 2 : 4);
++    /* Pending work can make WFI return.  In that case retain normal translation. */
++}
++#endif
++
++/* Keep exit-only handling out of the cached dispatch path. */
++static QEMU_NOINLINE TranslationBlock *tb_gen_code_for_exec(CPUState *cpu,
++        target_ulong pc, target_ulong cs_base, uint32_t flags, uint32_t cflags)
++{
++#ifdef TARGET_ARM
++    if (unlikely(uc_addr_is_exit(cpu->uc, pc))) {
++        arm_try_exit_without_tb(cpu, pc, cs_base, flags, cflags);
++    }
++#endif
++    mmap_lock();
++    TranslationBlock *tb = tb_gen_code(cpu, pc, cs_base, flags, cflags);
++    mmap_unlock();
++    return tb;
++}
++
+ static inline TranslationBlock *tb_find(CPUState *cpu,
+                                         TranslationBlock *last_tb,
+                                         int tb_exit, uint32_t cf_mask)
+@@ -258,9 +333,7 @@
+ 
+     tb = tb_lookup__cpu_state(cpu, &pc, &cs_base, &flags, cf_mask);
+     if (tb == NULL) {
+-        mmap_lock();
+-        tb = tb_gen_code(cpu, pc, cs_base, flags, cf_mask);
+-        mmap_unlock();
++        tb = tb_gen_code_for_exec(cpu, pc, cs_base, flags, cf_mask);
+         /* We add the TB in the virtual pc hash table for the fast lookup */
+         cpu->tb_jmp_cache[tb_jmp_cache_hash_func(cpu->uc, pc)] = tb;
+ 

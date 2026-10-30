@@ -136,31 +136,57 @@ public class SimpleFileIO extends BaseAndroidFileIO implements NewFileIO {
         return 0;
     }
 
+    private static final class MmapBuffer extends ByteArrayOutputStream {
+        MmapBuffer() {
+        }
+
+        MmapBuffer(int capacity) {
+            super(capacity);
+        }
+
+        void readFrom(RandomAccessFile file, int length) throws IOException {
+            byte[] overflow = null;
+            while (true) {
+                int remaining = length - count;
+                if (remaining == 0) {
+                    return;
+                }
+                int available = buf.length - count;
+                if (available > 0) {
+                    // Limit per-read native scratch while filling the owned result buffer.
+                    int read = file.read(buf, count, Math.min(remaining, Math.min(available, 64 * 1024)));
+                    if (read == -1) {
+                        return;
+                    }
+                    count += read;
+                } else {
+                    // Preserve growth when the file changes after its initial length query.
+                    if (overflow == null) {
+                        overflow = new byte[1024];
+                    }
+                    int read = file.read(overflow, 0, Math.min(remaining, overflow.length));
+                    if (read == -1) {
+                        return;
+                    }
+                    write(overflow, 0, read);
+                }
+            }
+        }
+
+        byte[] finish() {
+            // This one-shot buffer is never retained or reused after return.
+            return count == buf.length ? buf : toByteArray();
+        }
+    }
+
     @Override
     protected byte[] getMmapData(long addr, int offset, int length) throws IOException {
         RandomAccessFile randomAccessFile = checkOpenFile();
         randomAccessFile.seek(offset);
         int remaining = (int) (randomAccessFile.length() - randomAccessFile.getFilePointer());
-        ByteArrayOutputStream baos = remaining <= 0 ? new ByteArrayOutputStream() : new ByteArrayOutputStream(Math.min(length, remaining));
-        byte[] buf = new byte[1024];
-        do {
-            int count = length - baos.size();
-            if (count == 0) {
-                break;
-            }
-
-            if (count > buf.length) {
-                count = buf.length;
-            }
-
-            int read = randomAccessFile.read(buf, 0, count);
-            if (read == -1) {
-                break;
-            }
-
-            baos.write(buf, 0, read);
-        } while (true);
-        return baos.toByteArray();
+        MmapBuffer baos = remaining <= 0 ? new MmapBuffer() : new MmapBuffer(Math.min(length, remaining));
+        baos.readFrom(randomAccessFile, length);
+        return baos.finish();
     }
 
     @Override

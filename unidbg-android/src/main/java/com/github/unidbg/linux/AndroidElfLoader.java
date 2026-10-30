@@ -493,6 +493,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
 
         List<ModuleSymbol> list = new ArrayList<>();
         List<ModuleSymbol> resolvedSymbols = new ArrayList<>();
+        final Logger relocationLog = LoggerFactory.getLogger("com.github.unidbg.linux." + soName);
         for (MemoizedObject<ElfRelocation> object : dynamicStructure.getRelocations()) {
             ElfRelocation relocation = object.getValue();
             final int type = relocation.type();
@@ -505,7 +506,7 @@ public class AndroidElfLoader extends AbstractLoader<AndroidFileIO> implements M
             Pointer relocationAddr = UnidbgPointer.pointer(emulator, load_base + relocation.offset());
             assert relocationAddr != null;
 
-            Logger log = LoggerFactory.getLogger("com.github.unidbg.linux." + soName);
+            Logger log = relocationLog;
             if (log.isDebugEnabled()) {
                 log.debug("symbol={}, type={}, relocationAddr={}, offset=0x{}, addend={}, sym={}, android={}", symbol, type, relocationAddr, Long.toHexString(relocation.offset()), relocation.addend(), relocation.sym(), relocation.isAndroid());
             }

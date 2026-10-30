@@ -1,0 +1,102 @@
+diff --git a/qemu/accel/tcg/cputlb.c b/qemu/accel/tcg/cputlb.c
+index 3d0bebd..1366f29 100644
+--- a/qemu/accel/tcg/cputlb.c
++++ b/qemu/accel/tcg/cputlb.c
+@@ -1188,13 +1188,15 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
+
+ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
+                            CPUIOTLBEntry *iotlbentry, uintptr_t retaddr,
+-                           CPUTLBEntry *tlbe)
++                           CPUTLBEntry *tlbe, MemoryRegion *mr)
+ {
+ #ifdef TARGET_ARM
+     struct uc_struct *uc = cpu->uc;
+ #endif
+     ram_addr_t ram_addr = mem_vaddr + iotlbentry->addr;
+-    MemoryRegion *mr = cpu->uc->memory_mapping(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK));
++    if (!mr) {
++        mr = cpu->uc->memory_mapping(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK));
++    }
+
+     if (mr && (mr->perms & UC_PROT_EXEC) != 0) {
+         struct page_collection *pages
+@@ -1289,7 +1291,7 @@ void *probe_access(CPUArchState *env, target_ulong addr, int size,
+
+         /* Handle clean RAM pages.  */
+         if (tlb_addr & TLB_NOTDIRTY) {
+-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
++            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry, NULL);
+         }
+     }
+
+@@ -1462,7 +1464,7 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
+
+     if (unlikely(tlb_addr & TLB_NOTDIRTY)) {
+         notdirty_write(env_cpu(env), addr, 1 << s_bits,
+-                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr, tlbe);
++                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr, tlbe, NULL);
+     }
+
+     return hostaddr;
+@@ -2171,6 +2173,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
+     bool handled;
+     MemoryRegion *mr;
+     bool synced = false;
++    bool mapping_stable;
+
+     /* Handle CPU specific unaligned behaviour */
+     if (addr & ((1 << a_bits) - 1)) {
+@@ -2194,6 +2197,11 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
+     paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
+     mr = uc->memory_mapping(uc, paddr);
+
++    /* Remember whether the first mapping remains valid through this access.
++     * Callback/recovery paths invalidate this fact before changing mappings. */
++    mapping_stable = !uc->snapshot_level &&
++        !HOOK_EXISTS(uc, UC_HOOK_MEM_WRITE);
++
+     if (!uc->size_recur_mem) { // disabling write callback if in recursive call
+         // Unicorn: callback on memory write
+         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE) {
+@@ -2214,6 +2222,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
+
+     // Unicorn: callback on invalid memory
+     if (mr == NULL) {
++        mapping_stable = false;
+         handled = false;
+         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_UNMAPPED) {
+             if (hook->to_delete)
+@@ -2266,6 +2275,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
+
+     // Unicorn: callback on non-writable memory
+     if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //non-writable
++        mapping_stable = false;
+         // printf("not writable memory???\n");
+         handled = false;
+         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_PROT) {
+@@ -2310,6 +2320,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
+     }
+
+     if (uc->snapshot_level && mr->ram && mr->priority < uc->snapshot_level) {
++        mapping_stable = false;
+         mr = memory_cow(uc, mr, paddr & TARGET_PAGE_MASK, TARGET_PAGE_SIZE);
+         if (!mr) {
+             uc->invalid_addr = paddr;
+@@ -2339,6 +2350,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
+
+         /* Handle watchpoints.  */
+         if (unlikely(tlb_addr & TLB_WATCHPOINT)) {
++            mapping_stable = false;
+             /* On watchpoint hit, this will longjmp out.  */
+             cpu_check_watchpoint(env_cpu(env), addr, size,
+                                  iotlbentry->attrs, BP_MEM_WRITE, retaddr);
+@@ -2360,7 +2372,8 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
+
+         /* Handle clean RAM pages.  */
+         if (tlb_addr & TLB_NOTDIRTY) {
+-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
++            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry,
++                           mapping_stable && mr && mr->ram && !mr->readonly ? mr : NULL);
+         }
+
+         haddr = (void *)((uintptr_t)addr + entry->addend);

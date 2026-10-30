@@ -75,12 +75,19 @@ class ElfGnuHashTable implements HashTable {
             return null;
         }
 
+        int chainHash;
         do {
-            ElfSymbol symbol = symbolStructure.getELFSymbol(n);
-            if (symbolName.equals(symbol.getName())) {
-                return symbol;
+            chainHash = chains.chain(n);
+            // Bit zero marks the end of a chain; compare the remaining hash bits
+            // before parsing a symbol and allocating its name.
+            if ((chainHash | 1) == ((int) hash | 1)) {
+                ElfSymbol symbol = symbolStructure.getELFSymbol(n);
+                if (symbolName.equals(symbol.getName())) {
+                    return symbol;
+                }
             }
-        } while ((chains.chain(n++) & 1) == 0);
+            n++;
+        } while ((chainHash & 1) == 0);
 
         return null;
     }
@@ -108,7 +115,8 @@ class ElfGnuHashTable implements HashTable {
     private static long elf_hash(String name) {
         long h = 5381;
 
-        for(char c : name.toCharArray()) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
             h += (h << 5) + c; // h*33 + c = h + h * 32 + c = h + h << 5 + c
         }
         return h & 0xffffffffL;

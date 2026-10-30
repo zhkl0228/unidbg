@@ -1,0 +1,145 @@
+diff --git a/include/uc_priv.h b/include/uc_priv.h
+--- a/include/uc_priv.h
++++ b/include/uc_priv.h
+@@ -15,6 +15,11 @@
+
+ // The max recursive nested uc_emu_start levels
+ #define UC_MAX_NESTED_LEVEL (64)
++
++#define UC_RAM_CACHE_CAPACITY 128
++#define UC_RAM_CACHE_BUDGET (1024 * 1024)
++#define UC_RAM_CACHE_MAX_BLOCK (64 * 1024)
++#define UC_RAM_CACHE_OTHER_BUDGET (64 * 1024)
+
+ // These are masks of supported modes for each cpu/arch.
+ // They should be updated when changes are made to the uc_mode enum typedef.
+@@ -434,6 +439,16 @@
+     bool skip_sync_pc_on_exit;
+     // Keep existing hot-field offsets unchanged.
+     uc_write_mem_t write_mem_host;
++    // Private backing only: guest regions are still fully unmapped as usual.
++    struct {
++        void *host;
++        size_t size;
++        uint64_t align;
++    } ram_cache[UC_RAM_CACHE_CAPACITY];
++    size_t ram_cache_bytes;
++    size_t ram_cache_count;
++    size_t ram_cache_other_bytes;
++    bool ram_cache_closing;
+ };
+
+ // Metadata stub for the variable-size cpu context used with uc_context_*()
+diff --git a/qemu/exec.c b/qemu/exec.c
+--- a/qemu/exec.c
++++ b/qemu/exec.c
+@@ -1049,6 +1049,60 @@
+     return rb->page_size;
+ }
+
++/* Exact-size backing reuse preserves the allocator's trailing guard page.
++ * Total admission is capped at 1 MiB, including one host page per allocation.
++ * Non-host-page-sized buffers retain the original 64 KiB admission budget.
++ * RAMBlock/MemoryRegion ownership, unmapping and TLB/TB invalidation are unchanged.
++ */
++static void *ram_cache_take(struct uc_struct *uc, size_t size, uint64_t *align)
++{
++    size_t i;
++    if (uc->ram_cache_closing || size > UC_RAM_CACHE_MAX_BLOCK) {
++        return NULL;
++    }
++    for (i = 0; i < uc->ram_cache_count; i++) {
++        if (uc->ram_cache[i].size == size) {
++            void *host = uc->ram_cache[i].host;
++            *align = uc->ram_cache[i].align;
++            uc->ram_cache[i] = uc->ram_cache[--uc->ram_cache_count];
++            uc->ram_cache[uc->ram_cache_count].host = NULL;
++            uc->ram_cache_bytes -= size + uc->qemu_host_page_size;
++            if (size != uc->qemu_host_page_size) {
++                uc->ram_cache_other_bytes -= size + uc->qemu_host_page_size;
++            }
++            memset(host, 0, size);
++            return host;
++        }
++    }
++    return NULL;
++}
++
++static bool ram_cache_put(struct uc_struct *uc, RAMBlock *block)
++{
++    size_t i, charge;
++    if (uc->ram_cache_closing || !block->host ||
++        block->max_length > UC_RAM_CACHE_MAX_BLOCK || uc->qemu_host_page_size > UC_RAM_CACHE_MAX_BLOCK ||
++        uc->ram_cache_count == UC_RAM_CACHE_CAPACITY) {
++        return false;
++    }
++    charge = block->max_length + uc->qemu_host_page_size;
++    if (charge > UC_RAM_CACHE_BUDGET - uc->ram_cache_bytes) {
++        return false;
++    }
++    if (block->max_length != uc->qemu_host_page_size) {
++        if (charge > UC_RAM_CACHE_OTHER_BUDGET - uc->ram_cache_other_bytes) {
++            return false;
++        }
++        uc->ram_cache_other_bytes += charge;
++    }
++    i = uc->ram_cache_count++;
++    uc->ram_cache[i].host = block->host;
++    uc->ram_cache[i].size = block->max_length;
++    uc->ram_cache[i].align = block->mr->align;
++    uc->ram_cache_bytes += charge;
++    return true;
++}
++
+ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
+ {
+     RAMBlock *block;
+@@ -1057,8 +1111,12 @@
+     new_block->offset = find_ram_offset(uc, new_block->max_length);
+
+     if (!new_block->host) {
+-        new_block->host = phys_mem_alloc(uc, new_block->max_length,
+-                &new_block->mr->align);
++        new_block->host = ram_cache_take(uc, new_block->max_length,
++                                        &new_block->mr->align);
++        if (!new_block->host) {
++            new_block->host = phys_mem_alloc(uc, new_block->max_length,
++                                            &new_block->mr->align);
++        }
+         if (!new_block->host) {
+             // mmap fails.
+             uc->invalid_error = UC_ERR_NOMEM;
+@@ -1154,7 +1212,9 @@
+         ;
+     } else if (false) {
+     } else {
+-        qemu_anon_ram_free(uc, block->host, block->max_length);
++        if (!ram_cache_put(uc, block)) {
++            qemu_anon_ram_free(uc, block->host, block->max_length);
++        }
+     }
+     g_free(block);
+ }
+diff --git a/uc.c b/uc.c
+--- a/uc.c
++++ b/uc.c
+@@ -499,6 +499,7 @@
+         return UC_ERR_OK;
+     }
+
++    uc->ram_cache_closing = true;
+     // Flush all translation buffers or we leak memory allocated by MMU
+     uc->tb_flush(uc);
+
+@@ -535,6 +536,11 @@
+         g_free(mr);
+     }
+     g_array_free(uc->unmapped_regions, true);
++    for (i = 0; i < UC_RAM_CACHE_CAPACITY; i++) {
++        if (uc->ram_cache[i].host) {
++            qemu_anon_ram_free(uc, uc->ram_cache[i].host, uc->ram_cache[i].size);
++        }
++    }
+
+     // Thread relateds.
+     if (uc->qemu_thread_data) {

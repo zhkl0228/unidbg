@@ -1,0 +1,106 @@
+diff --git a/include/uc_priv.h b/include/uc_priv.h
+--- a/include/uc_priv.h
++++ b/include/uc_priv.h
+@@ -432,6 +432,8 @@
+     bool thread_executable_entry;
+     bool current_executable;
+     bool skip_sync_pc_on_exit;
++    // Keep existing hot-field offsets unchanged.
++    uc_write_mem_t write_mem_host;
+ };
+ 
+ // Metadata stub for the variable-size cpu context used with uc_context_*()
+diff --git a/qemu/exec.c b/qemu/exec.c
+--- a/qemu/exec.c
++++ b/qemu/exec.c
+@@ -1570,11 +1570,11 @@
+ }
+ 
+ /* Called within RCU critical section.  */
+-static MemTxResult flatview_write_continue(struct uc_struct *uc, FlatView *fv, hwaddr addr,
++static inline MemTxResult flatview_write_continue(struct uc_struct *uc, FlatView *fv, hwaddr addr,
+                                            MemTxAttrs attrs,
+                                            const void *ptr,
+                                            hwaddr len, hwaddr addr1,
+-                                           hwaddr l, MemoryRegion *mr)
++                                           hwaddr l, MemoryRegion *mr, bool host_write)
+ {
+     uint8_t *ram_ptr;
+     uint64_t val;
+@@ -1583,7 +1583,8 @@
+     const uint8_t *buf = ptr;
+ 
+     for (;;) {
+-        if (!memory_access_is_direct(mr, true)) {
++        if (!(host_write && memory_region_is_ram(mr)) &&
++            !memory_access_is_direct(mr, true)) {
+             release_lock |= prepare_mmio_access(mr);
+             l = memory_access_size(mr, l, addr1);
+             /* XXX: could force current_cpu to NULL to avoid
+@@ -1628,7 +1629,7 @@
+     l = len;
+     mr = flatview_translate(uc, fv, addr, &addr1, &l, true, attrs);
+     result = flatview_write_continue(uc, fv, addr, attrs, buf, len,
+-                                     addr1, l, mr);
++                                     addr1, l, mr, false);
+ 
+     return result;
+ }
+@@ -1799,8 +1800,25 @@
+ {
+ }
+ 
++/* Host/API-only writes may update already-readonly RAM without changing
++ * the guest-visible topology. Keep FlatView clipping and MMIO dispatch. */
++static bool cpu_physical_mem_write_host(AddressSpace *as, hwaddr addr,
++                                         const uint8_t *buf, hwaddr len)
++{
++    if (len == 0) {
++        return true;
++    }
++    FlatView *fv = address_space_to_flatview(as);
++    hwaddr l = len, addr1;
++    MemoryRegion *mr = flatview_translate(as->uc, fv, addr, &addr1, &l,
++                                        true, MEMTXATTRS_UNSPECIFIED);
++    return flatview_write_continue(as->uc, fv, addr, MEMTXATTRS_UNSPECIFIED,
++                                   buf, len, addr1, l, mr, true) == MEMTX_OK;
++}
++
+ void cpu_exec_init_all(struct uc_struct *uc)
+ {
++    uc->write_mem_host = cpu_physical_mem_write_host;
+     /* The data structures we set up here depend on knowing the page size,
+      * so no more changes can be made after this point.
+      * In an ideal world, nothing we did before we had finished the
+diff --git a/uc.c b/uc.c
+--- a/uc.c
++++ b/uc.c
+@@ -964,8 +964,26 @@
+             uint32_t operms = mr->perms;
+             uint64_t align = uc->target_page_align;
+             if (!(operms & UC_PROT_WRITE)) { // write protected
+-                // but this is not the program accessing memory, so temporarily
+-                // mark writable
++                if (mr->readonly && mr->ram &&
++                    mr->container == uc->system_memory &&
++                    QTAILQ_EMPTY(&mr->subregions) && uc->snapshot_level == 0 &&
++                    uc->write_mem_host != NULL) {
++                    // Preserve TLB/jump-cache effects without rebuilding an
++                    // unchanged FlatView. Keep ordinary writable access intact.
++                    len = memory_region_len(uc, mr, address, size - count);
++                    uc->tcg_flush_tlb(uc);
++                    bool written = uc->write_mem_host(&uc->address_space_memory,
++                                                       address, bytes, len);
++                    uc->tcg_flush_tlb(uc);
++                    if (!written) {
++                        break;
++                    }
++                    count += len;
++                    address += len;
++                    bytes += len;
++                    continue;
++                }
++                // Host writes may temporarily make other mappings writable.
+                 uc->readonly_mem(mr, false);
+             }
+ 

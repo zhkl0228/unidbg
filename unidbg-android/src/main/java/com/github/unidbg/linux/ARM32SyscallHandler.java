@@ -70,19 +70,16 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
     public void hook(Backend backend, int intno, int swi, Object user) {
         Emulator<AndroidFileIO> emulator = (Emulator<AndroidFileIO>) user;
         UnidbgPointer pc = UnidbgPointer.register(emulator, ArmConst.UC_ARM_REG_PC);
-        final int bkpt;
-        if (pc == null) {
-            bkpt = swi;
-        } else {
-            if (ARM.isThumb(backend)) {
+        if (intno == ARMEmulator.EXCP_BKPT) { // bkpt
+            final int bkpt;
+            if (pc == null) {
+                bkpt = swi;
+            } else if (ARM.isThumb(backend)) {
                 bkpt = pc.getShort(0) & 0xff;
             } else {
                 int instruction = pc.getInt(0);
                 bkpt = (instruction & 0xf) | ((instruction >> 8) & 0xfff) << 4;
             }
-        }
-
-        if (intno == ARMEmulator.EXCP_BKPT) { // bkpt
             createBreaker(emulator).brk(pc, bkpt);
             return;
         }
@@ -120,10 +117,11 @@ public class ARM32SyscallHandler extends AndroidSyscallHandler {
                 throw new IllegalStateException("svc number: " + swi);
             }
             if (swi != 0) {
-                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX)) {
+                final int svcMax = ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX;
+                if (swi == svcMax) {
                     throw new PopContextException();
                 }
-                if (swi == (ARM.isThumb(backend) ? ThumbSvc.SVC_MAX : ArmSvc.SVC_MAX) - 1) {
+                if (swi == svcMax - 1) {
                     throw new ThreadContextSwitchException();
                 }
                 Svc svc = svcMemory.getSvc(swi);
