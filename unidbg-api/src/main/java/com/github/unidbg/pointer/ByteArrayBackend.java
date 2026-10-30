@@ -61,7 +61,12 @@ class ByteArrayBackend extends AbstractBackend implements Backend {
         }
         int start = (int) address;
         if (start < 0 || start > data.length || size > Integer.MAX_VALUE - start) {
-            return Backend.super.mem_read_value(address, size);
+            byte[] bytes = mem_read(address, size);
+            long value = 0;
+            for (int i = 0; i < size; i++) {
+                value |= (bytes[i] & 0xffL) << (i * 8);
+            }
+            return value;
         }
         // Arrays.copyOfRange pads reads beyond the end with zeroes. Preserve
         // that behavior, and its int address conversion, without a copy.
@@ -81,7 +86,11 @@ class ByteArrayBackend extends AbstractBackend implements Backend {
         int start = (int) address;
         if (start < 0 || start > data.length || size > data.length - start) {
             // Keep System.arraycopy's bounds failures and all-or-nothing write.
-            Backend.super.mem_write_value(address, value, size);
+            byte[] bytes = new byte[size];
+            for (int i = 0; i < size; i++) {
+                bytes[i] = (byte) (value >>> (i * 8));
+            }
+            mem_write(address, bytes);
             return;
         }
         for (int i = 0; i < size; i++) {
