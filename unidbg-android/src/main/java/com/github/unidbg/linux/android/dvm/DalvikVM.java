@@ -1404,7 +1404,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetObjectField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1428,7 +1428,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetBooleanField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1473,7 +1473,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetIntField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1497,7 +1497,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetLongField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1522,7 +1522,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("GetFloatField object={}, jfieldID={}", object, jfieldID);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1558,7 +1558,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("SetObjectField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1584,7 +1584,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("SetBooleanField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1631,7 +1631,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("SetIntField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1657,7 +1657,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("SetLongField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1686,7 +1686,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("SetFloatField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
@@ -1712,7 +1712,7 @@ public class DalvikVM extends BaseVM implements VM {
                     log.debug("SetDoubleField object={}, jfieldID={}, value={}", object, jfieldID, value);
                 }
                 DvmObject<?> dvmObject = getObject(object.toIntPeer());
-                DvmClass dvmClass = dvmObject == null ? null : dvmObject.getObjectType();
+                DvmClass dvmClass = dvmObject == null ? null : dvmObject instanceof DvmClass ? (DvmClass) dvmObject : dvmObject.getObjectType();
                 DvmField dvmField = dvmClass == null ? null : dvmClass.getField(jfieldID.toIntPeer());
                 if (dvmField == null) {
                     throw new BackendException();
