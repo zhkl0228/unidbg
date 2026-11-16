@@ -1,5 +1,6 @@
 package net.fornwall.jelf;
 
+import com.github.unidbg.linux.EmptySymbolLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -317,7 +318,8 @@ public class ElfDynamicStructure {
                 rel[i] = new MemoizedObject<ElfRelocation>() {
                     @Override
                     public ElfRelocation computeValue() throws IOException {
-                        return new ElfRelocation(parser, relocationOffset, relEntrySize, symbolStructure.getValue());
+                        SymbolLocator locator = symbolStructure == null ? new EmptySymbolLocator() : symbolStructure.getValue();
+                        return new ElfRelocation(parser, relocationOffset, relEntrySize, locator);
                     }
                 };
             }
@@ -332,14 +334,14 @@ public class ElfDynamicStructure {
                 pltRel[i] = new MemoizedObject<ElfRelocation>() {
                     @Override
                     public ElfRelocation computeValue() throws IOException {
-                        return new ElfRelocation(parser, relocationOffset, relEntrySize, symbolStructure.getValue());
+                        SymbolLocator locator = symbolStructure == null ? new EmptySymbolLocator() : symbolStructure.getValue();
+                        return new ElfRelocation(parser, relocationOffset, relEntrySize, locator);
                     }
                 };
             }
         }
 
 		if (androidRelOffset > 0) {
-			assert symbolStructure != null;
 			androidRelocation = new MemoizedObject<AndroidRelocation>() {
 				@Override
 				protected AndroidRelocation computeValue() throws ElfException, IOException {
@@ -348,14 +350,14 @@ public class ElfDynamicStructure {
 					parser.read(magic);
 					if (androidRelSize >= 4 && "APS2".equals(new String(magic))) {
 						ByteBuffer androidRelData = parser.readBuffer(androidRelSize - 4);
-						return new AndroidRelocation(parser, symbolStructure.getValue(), androidRelData, false);
+						SymbolLocator locator = symbolStructure == null ? new EmptySymbolLocator() : symbolStructure.getValue();
+						return new AndroidRelocation(parser, locator, androidRelData, false);
 					} else {
 						throw new IllegalStateException("bad android relocation header.");
 					}
 				}
 			};
 		} else if (androidRelAOffset > 0) {
-			assert symbolStructure != null;
 			androidRelocation = new MemoizedObject<AndroidRelocation>() {
 				@Override
 				protected AndroidRelocation computeValue() throws ElfException, IOException {
@@ -364,7 +366,8 @@ public class ElfDynamicStructure {
 					parser.read(magic);
 					if (androidRelASize >= 4 && "APS2".equals(new String(magic))) {
 						ByteBuffer androidRelData = parser.readBuffer(androidRelASize - 4);
-						return new AndroidRelocation(parser, symbolStructure.getValue(), androidRelData, true);
+						SymbolLocator locator = symbolStructure == null ? new EmptySymbolLocator() : symbolStructure.getValue();
+						return new AndroidRelocation(parser, locator, androidRelData, true);
 					} else {
 						throw new IllegalStateException("bad android relocation header.");
 					}
