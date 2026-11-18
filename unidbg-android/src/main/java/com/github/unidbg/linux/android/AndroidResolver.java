@@ -17,6 +17,7 @@ import com.github.unidbg.linux.thread.ThreadJoin23;
 import com.github.unidbg.spi.LibraryFile;
 import com.github.unidbg.spi.SyscallHandler;
 import com.github.unidbg.unix.ThreadJoinVisitor;
+import com.github.unidbg.unix.UnixEmulator;
 import com.github.unidbg.utils.ResourceUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -95,6 +96,15 @@ public class AndroidResolver implements LibraryResolver, IOResolver<AndroidFileI
         if (path.startsWith(LogCatFileIO.LOG_PATH_PREFIX)) {
             try {
                 File log = new File(rootDir, path);
+                // Contain the log file under rootDir: a guest path such as
+                // /dev/log/../../.. must not resolve outside rootDir (#795).
+                String canonicalRoot = rootDir.getCanonicalPath();
+                if (!canonicalRoot.endsWith(File.separator)) {
+                    canonicalRoot = canonicalRoot + File.separator;
+                }
+                if (!log.getCanonicalPath().startsWith(canonicalRoot)) {
+                    return FileResult.<AndroidFileIO>failed(UnixEmulator.EACCES);
+                }
                 File logDir = log.getParentFile();
                 if (!logDir.exists() && !logDir.mkdirs()) {
                     throw new IOException("mkdirs failed: " + logDir);
