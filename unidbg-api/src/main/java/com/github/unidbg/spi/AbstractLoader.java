@@ -209,7 +209,13 @@ public abstract class AbstractLoader<T extends NewFileIO> implements Memory, Loa
                                 remove.prot, Long.toHexString(address));
                     }
                     if (remove.size > size) {
-                        throw new IllegalStateException("munmap adjacent region size=0x" + Long.toHexString(remove.size) + " exceeds remaining=0x" + Long.toHexString(size) + " at address=0x" + Long.toHexString(address));
+                        long retainedBase = address + size;
+                        long retainedSize = remove.size - size;
+                        if (memoryMap.put(retainedBase, new MemoryMap(retainedBase, retainedSize, remove.prot)) != null) {
+                            log.warn("munmap adjacent retained mapping exists at address=0x{}", Long.toHexString(retainedBase));
+                        }
+                        size = 0;
+                        break;
                     }
                     address += remove.size;
                     size -= remove.size;
