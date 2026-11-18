@@ -251,6 +251,18 @@ public class DvmClass extends DvmObject<Class<?>> {
                 }
             }
         }
+        if (fnPtr == null && index >= 0) {
+            String signature = method.substring(index);
+            String longSymbolName = buildLongJniSymbolName(method.substring(0, index), signature);
+            for (Module module : emulator.getMemory().getLoadedModules()) {
+                Symbol symbol = module.findSymbolByName(longSymbolName, false);
+                if (symbol != null) {
+                    fnPtr = (UnidbgPointer) symbol.createPointer(emulator);
+                    symbolName = longSymbolName;
+                    break;
+                }
+            }
+        }
         if (fnPtr == null) {
             throw new IllegalArgumentException("find method failed: " + method);
         }
@@ -278,7 +290,20 @@ public class DvmClass extends DvmObject<Class<?>> {
             }
         }
     }
-    
+
+    private String buildLongJniSymbolName(String methodName, String signature) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Java_");
+        mangleForJni(builder, getClassName());
+        builder.append("_");
+        mangleForJni(builder, methodName);
+        builder.append("__");
+        int end = signature.lastIndexOf(')');
+        String args = end > 1 ? signature.substring(1, end) : "";
+        mangleForJni(builder, args);
+        return builder.toString();
+    }
+
     public void callStaticJniMethod(Emulator<?> emulator, String method, Object...args) {
         try {
             callJniMethod(emulator, vm, this, this, method, args);
