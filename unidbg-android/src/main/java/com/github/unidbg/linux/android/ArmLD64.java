@@ -228,7 +228,7 @@ public class ArmLD64 extends Dlfcn {
                     return svcMemory.registerSvc(new Arm64Svc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            return error.peer;
+                            return error.getByte(0) == 0 ? 0 : error.peer;
                         }
                     }).peer;
                 case "dlclose":
@@ -370,6 +370,7 @@ public class ArmLD64 extends Dlfcn {
 
                 pointer = pointer.share(-8, 0); // NULL-terminated
                 pointer.setLong(0, 0);
+                error.setMemory(0, 0x80, (byte) 0);
 
                 LinuxModule m = (LinuxModule) module;
                 if (m.getUnresolvedSymbol().isEmpty()) {
