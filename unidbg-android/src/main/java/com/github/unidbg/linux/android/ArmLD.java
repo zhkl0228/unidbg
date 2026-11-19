@@ -171,7 +171,7 @@ public class ArmLD extends Dlfcn {
                     return svcMemory.registerSvc(new ArmSvc() {
                         @Override
                         public long handle(Emulator<?> emulator) {
-                            return error.peer;
+                            return error.getByte(0) == 0 ? 0 : error.peer;
                         }
                     }).peer;
                 case "dlclose":
@@ -313,6 +313,7 @@ public class ArmLD extends Dlfcn {
 
                 pointer = pointer.share(-4, 0); // NULL-terminated
                 pointer.setInt(0, 0);
+                error.setMemory(0, 0x80, (byte) 0);
 
                 LinuxModule m = (LinuxModule) module;
                 if (m.getUnresolvedSymbol().isEmpty()) {
